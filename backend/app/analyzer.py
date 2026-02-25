@@ -14,10 +14,15 @@ from .schemas import (
     TimeBucketPoint,
 )
 
+# playerMessageTime 기반으로 저장된 로그의 기준점 (VOD 시작 = epoch 0)
+_VOD_RELATIVE_BASE = datetime(1970, 1, 1, 0, 0, 0)
+
 
 def _bucket_start(ts: datetime, bucket_size_seconds: int) -> datetime:
-    bucket_epoch = int(ts.timestamp()) // bucket_size_seconds * bucket_size_seconds
-    return datetime.fromtimestamp(bucket_epoch)
+    # .timestamp() 은 Windows에서 1970년 근처 datetime에 OSError 발생 → timedelta 사용
+    offset_sec = int((ts - _VOD_RELATIVE_BASE).total_seconds())
+    bucket_offset = offset_sec // bucket_size_seconds * bucket_size_seconds
+    return _VOD_RELATIVE_BASE + timedelta(seconds=bucket_offset)
 
 
 def _format_offset(seconds: int) -> str:
@@ -104,7 +109,12 @@ def build_analysis(
                 by_bucket_keyword[(bucket, keyword)] += count
 
     buckets = sorted(by_bucket_total.keys())
-    base_time = messages[0].timestamp
+    # playerMessageTime 기반 로그(year=1970): epoch을 기준점으로 사용 → VOD 직접 offset
+    # 레거시 벽시계 로그: 첫 채팅을 기준점으로 사용 (기존 동작 유지)
+    if messages[0].timestamp.year == 1970:
+        base_time = _VOD_RELATIVE_BASE
+    else:
+        base_time = messages[0].timestamp
     volume_series = [
         TimeBucketPoint(
             bucket_start=bucket,

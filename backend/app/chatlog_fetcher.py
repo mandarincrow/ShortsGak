@@ -51,15 +51,21 @@ def fetch_chatlog_to_file(vod_id: str, destination: Path) -> tuple[int, int]:
 
             log_messages: list[str] = []
             for chat in video_chats:
-                message_time = chat.get("messageTime")
+                player_message_time = chat.get("playerMessageTime")
                 user_id_hash = chat.get("userIdHash", "")
                 message = chat.get("content", "")
-                if message_time is None:
-                    continue
-
-                timestamp = message_time / 1000.0
-                kst_time = datetime.fromtimestamp(timestamp, KST)
-                formatted_time = kst_time.strftime("%Y-%m-%d %H:%M:%S")
+                # playerMessageTime: VOD 재생 위치 (ms). messageTime 은 벽시계 시각이므로
+                # playerMessageTime 을 기준으로 저장해야 VOD 링크 offset 이 정확합니다.
+                if player_message_time is None:
+                    # fallback: messageTime 벽시계 KST 사용 (레거시)
+                    message_time = chat.get("messageTime")
+                    if message_time is None:
+                        continue
+                    vod_time = datetime.fromtimestamp(message_time / 1000.0, KST).replace(tzinfo=None)
+                else:
+                    # epoch-relative UTC datetime (year=1970) = VOD 재생 오프셋
+                    vod_time = datetime.utcfromtimestamp(player_message_time / 1000.0)
+                formatted_time = vod_time.strftime("%Y-%m-%d %H:%M:%S")
 
                 nickname = "Unknown"
                 profile_raw = chat.get("profile")
