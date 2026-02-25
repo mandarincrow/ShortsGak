@@ -1,68 +1,117 @@
 # Development Handoff (AI Agent)
 
-이 문서는 "다음 에이전트가 바로 이어서 작업"하기 위한 현재 상태 요약입니다.
+> 이 문서 하나로 현재 상태를 파악하고 작업을 바로 이어갈 수 있도록 기술합니다.
 
-## 1) 현재 제품 상태
-- 목표: VOD 채팅 로그 기반 하이라이트 후보 탐지 + 시각화 + 내보내기
-- 실행 형태:
-  - 개발 모드: FastAPI + Vite
-  - 배포 모드: PyWebView + 내장 FastAPI + PyInstaller 실행파일
-- 현재 빌드 산출물: `dist/ShortsGak/ShortsGak.exe`
+---
 
-## 2) 최근 반영된 핵심 변경
-- `Failed to fetch` 해결
-  - 원인: 프론트 API URL이 `http://localhost:8000` 고정
-  - 조치: same-origin 기반 호출로 변경 (`frontend/src/api.ts`)
-  - 개발 편의: Vite 프록시 추가 (`frontend/vite.config.ts`)
-- Windows 호환성 버그 해결
-  - 원인: `os.getuid()` 사용으로 Windows 런타임 오류
-  - 조치: 가드 처리 (`backend/app/parser.py`)
-- 키워드 정규화 고도화
-  - `헉`, `허어어억`, `허어어어어어억`을 동일 키워드로 집계
-  - 중복 키워드 입력 시 이중 카운트 방지
-- 릴리즈 ZIP 자동화
-  - `scripts/package_release.bat` 추가
-  - `scripts/build.bat [version]` 실행 시 exe 빌드 + ZIP 생성까지 자동 수행
-  - ZIP 내부에 사용자 안내 `README.txt` 포함
-- 문서 체계 정리
-  - 루트 `README.md`를 일반 사용자 중심으로 단순화
-  - 개발자용 문서 분리: `README_DEVELOPER.md`
-  - 라이선스 확정: `MIT` (`LICENSE` 추가)
+## 1. 현재 제품 상태
 
-## 3) 주요 디렉터리
-- `backend/app`: API/파서/분석 엔진
-- `frontend/src`: UI + API 호출
-- `desktop_launcher`: 데스크톱 런처 엔트리
-- `scripts/build.bat`: 윈도우 빌드 자동화
-- `ShortsGak.spec`: PyInstaller 스펙
+- **최신 빌드**: v0.1.1
+- **동작 확인**: VOD ID `11933431` 기준 채팅 2784건, 하이라이트 03:08:30 탐지 정상
+- **배포 산출물**: `dist/ShortsGak/ShortsGak.exe`
 
-## 4) 실행/검증 빠른 경로
+---
 
-### 개발 실행
-1. 루트에서 `.venv` 준비
-2. 백엔드: `./.venv/Scripts/python -m uvicorn backend.app.main:app --reload --port 8000`
-3. 프론트: `cd frontend && npm run dev`
+## 2. 디렉터리 구조
 
-### 윈도우 실행파일 빌드
-1. 루트에서 `scripts\build.bat`
-2. 결과물 확인: `dist\ShortsGak\ShortsGak.exe`
+```
+shorts-gak/
+├── backend/
+│   ├── app/
+│   │   ├── main.py            # FastAPI 앱 + 라우터
+│   │   ├── analyzer.py        # 버킷 집계 + 하이라이트 스코어링
+│   │   ├── chatlog_fetcher.py # Chzzk API 수집 (playerMessageTime 기준)
+│   │   ├── chatlog_cache.py   # LRU 캐시 관리 (최대 5개)
+│   │   ├── parser.py          # 로그 파싱 + 캐시/수집 오케스트레이션
+│   │   ├── schemas.py         # Pydantic 모델 (API 계약)
+│   │   └── logging_config.py  # 로깅 설정
+│   └── data/chatlogs/         # 캐시 파일 (.log) 저장 위치
+├── frontend/
+│   └── src/
+│       ├── App.tsx            # 메인 UI + 공유 state (chartWindowSize, chartPanCenter)
+│       ├── LineChart.tsx      # 자체 SVG 차트 (zoom / pan / minimap)
+│       ├── api.ts             # POST /api/analyze 호출
+│       ├── types.ts           # TypeScript 타입 (API 응답 형태)
+│       └── styles.css         # CSS 변수 기반 팔레트
+├── desktop_launcher/
+│   └── run_desktop.py         # PyWebView 런처 – 동적 포트, uvicorn 백그라운드 스레드
+├── scripts/
+│   ├── build.bat              # 전체 빌드 자동화 (컬러 출력, logs/ 로그 분리)
+│   └── package_release.bat    # 기존 dist/ 를 ZIP으로만 묶기 (빌드 없음)
+├── main.py                    # PyInstaller 엔트리포인트
+└── ShortsGak.spec             # PyInstaller 스펙 (onedir)
+```
 
-### 릴리즈 ZIP 생성
-1. 빌드+패키징 동시: `scripts\build.bat v0.1.0`
-2. ZIP만 생성: `scripts\package_release.bat v0.1.0`
-3. 결과물 확인: `release\ShortsGak-win64-v0.1.0.zip`
+---
 
-## 5) 로그 위치(장애 분석 기준)
-- 앱 실행 로그(개발): `backend/logs/app.log`
-- 앱 실행 로그(배포 exe): `dist/ShortsGak/_internal/backend/logs/app.log`
-- 빌드 로그: `logs/build_windows.log`
-- 임시 빌드 로그: `%TEMP%/shortsgak_build_windows.log`
+## 3. 개발 환경 실행
 
-## 6) 현재 알려진 리스크
-- `pywebview`는 WebView2 런타임 의존 (대상 PC 사전 확인 필요)
-- `frontend` 의존성에 moderate 취약점 경고가 존재할 수 있음 (`npm audit` 확인 가능)
+### 사전 조건
+- Python 3.12 (`py -3.12` 사용 가능)
+- Node.js LTS + npm
 
-## 7) 다음 우선순위 제안
-1. `%LOCALAPPDATA%/ShortsGak` 기반 로그/캐시 경로 정착
-2. 에러 발생 시 UI에서 로그 열기/복사 UX 제공
-3. 설치형 배포(Inno Setup/MSIX) 및 코드서명 체계 도입
+### 백엔드
+
+```powershell
+cd f:\shorts-gak
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r backend/requirements.txt
+uvicorn backend.app.main:app --reload --port 8000
+```
+
+### 프론트엔드 (별도 터미널)
+
+```powershell
+cd frontend
+npm install
+npm run dev
+# localhost:5173 — /api/* 는 localhost:8000 으로 프록시됨 (vite.config.ts)
+```
+
+---
+
+## 4. Windows exe 빌드
+
+```powershell
+cd f:\shorts-gak
+scripts\build.bat v0.1.2
+```
+
+단계: 프론트 빌드 → pip 설치 → PyInstaller → ZIP 패키징
+
+상세 출력: `logs/build_windows.log`
+산출물: `dist/ShortsGak/ShortsGak.exe`, `release/ShortsGak-win64-v0.1.2.zip`
+
+> **주의**: `package_release.bat` 단독 실행은 기존 `dist/` 를 그대로 ZIP으로 묶을 뿐입니다.
+> 코드 변경 후에는 반드시 `build.bat` 을 사용하세요.
+
+---
+
+## 5. 로그 위치
+
+| 상황 | 경로 |
+|------|------|
+| 빌드 로그 | `logs/build_windows.log` |
+| 앱 실행 로그 (개발) | `backend/logs/app.log` |
+| 앱 실행 로그 (배포 exe) | `dist/ShortsGak/_internal/backend/logs/app.log` |
+
+---
+
+## 6. 해결된 주요 이슈 (재현 방지용)
+
+| 이슈 | 원인 | 해결 |
+|------|------|------|
+| 채팅 반응이 ~38초 이른 위치에 표시 | `messageTime` (벽시계 KST) 사용 | `playerMessageTime` (VOD 오프셋 ms) 으로 변경 |
+| Windows `OSError` (1970년 datetime) | `datetime.timestamp()` Windows 미지원 | timedelta 산술 (`ts - _VOD_RELATIVE_BASE`) 사용 |
+| 15초 버킷인데 30초 구간 표시 | 인접 버킷 무한 병합 | `max_merge_buckets=2` 제한 도입 |
+| exe 재빌드 후에도 이전 코드 동작 | `package_release.bat` 만 실행 (dist 미갱신) | `build.bat` 전체 실행 필수 |
+| PyWebView 환경 파일 다운로드 불가 | WebView 샌드박스 제한 | CSV/JSON 다운로드 버튼 제거 |
+| PowerShell `Set-Content` 한국어 손상 | UTF-8 인코딩 문제 | Python `Path.write_text(encoding='utf-8')` 사용 |
+
+---
+
+## 7. 알려진 리스크
+
+- PyWebView는 **WebView2 런타임** 필요 → 배포 대상 PC 사전 확인 요망
+- 캐시/로그 경로가 현재 `backend/data/`, `backend/logs/` (실행 파일 내부) → N-01 참조

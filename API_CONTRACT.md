@@ -1,139 +1,119 @@
-# Analyze API Contract (T01)
+# API Contract
 
-## Endpoint
-- `POST /api/analyze`
-- `POST /api/export`
+> Frontend ↔ Backend 계약.  
+> Breaking change 금지. 변경 시 이 파일을 반드시 동기화하세요.
 
-## Request
+---
+
+## 엔드포인트 목록
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/health` | 서버 상태 (`{"status":"ok"}`) |
+| POST | `/api/analyze` | 분석 실행 |
+
+> `/api/export` 는 백엔드에 남아있으나 **PyWebView 환경에서 파일 다운로드 불가** 확인으로 UI에서 제거됨.
+
+---
+
+## POST /api/analyze
+
+### Request Body
+
 ```json
 {
-  # API Contract
-
-  ## Base
-  - Health: `GET /health`
-  - Analyze: `POST /api/analyze`
-  - Export: `POST /api/export`
-
-  ## 1) Analyze
-
-  ### Request
-  ```json
-  {
-    "source": {
-      "vod_id": "11933431"
+  "source": {
+    "vod_id": "11933431"
+  },
+  "keywords": ["헉", "ㅋㅋㅋㅋ", "와"],
+  "options": {
+    "bucket_size_seconds": 30,
+    "keyword_options": {
+      "mode": "contains",
+      "case_sensitive": false
     },
-    "keywords": ["헉", "ㅋㅋㅋㅋ", "와"],
-    "options": {
-      "bucket_size_seconds": 30,
-      "keyword_options": {
-        "mode": "contains",
-        "case_sensitive": false
-      },
-      "normalize_repeated_reactions": true,
-      "min_highlight_score": 1.2,
-      "max_highlights": 20
+    "normalize_repeated_reactions": true,
+    "min_highlight_score": 1.2,
+    "max_highlights": 20,
+    "max_merge_buckets": 2
+  }
+}
+```
+
+#### options 필드 상세
+
+| 필드 | 타입 | 기본값 | 범위 | 설명 |
+|------|------|--------|------|------|
+| `bucket_size_seconds` | int | 30 | 5~300 | 버킷 크기 (초) |
+| `keyword_options.mode` | `"contains"\|"exact"` | `"contains"` | — | 키워드 매칭 방식 |
+| `keyword_options.case_sensitive` | bool | false | — | 대소문자 구분 |
+| `normalize_repeated_reactions` | bool | true | — | 반복 반응 정규화 |
+| `min_highlight_score` | float | 1.2 | — | 하이라이트 최소 z-score |
+| `max_highlights` | int | 20 | 1~200 | 반환 최대 하이라이트 수 |
+| `max_merge_buckets` | int | 2 | 1~20 | 인접 버킷 병합 최대 수 |
+
+### Response Body
+
+```json
+{
+  "summary": {
+    "total_messages": 2784,
+    "unique_users": 512,
+    "start_time": "1970-01-01T00:00:10",
+    "end_time": "1970-01-01T03:48:00",
+    "vod_duration_sec": 13670,
+    "vod_duration_label": "03:47:50",
+    "avg_messages_per_minute": 12.24
+  },
+  "volume_series": [
+    {
+      "bucket_start": "1970-01-01T00:00:00",
+      "bucket_start_offset_sec": 0,
+      "bucket_start_offset_label": "00:00:00",
+      "total_messages": 13,
+      "unique_users": 11
     }
-  }
-  ```
+  ],
+  "keyword_series": [
+    {
+      "bucket_start": "1970-01-01T00:00:00",
+      "bucket_start_offset_sec": 0,
+      "bucket_start_offset_label": "00:00:00",
+      "keyword": "헉",
+      "count": 4
+    }
+  ],
+  "highlights": [
+    {
+      "start": "1970-01-01T03:08:30",
+      "start_offset_sec": 11310,
+      "start_offset_label": "03:08:30",
+      "end": "1970-01-01T03:09:00",
+      "end_offset_sec": 11340,
+      "end_offset_label": "03:09:00",
+      "score": 3.142,
+      "peak_bucket": "1970-01-01T03:08:30",
+      "peak_offset_sec": 11310,
+      "peak_offset_label": "03:08:30",
+      "peak_total_messages": 47,
+      "representative_keyword": "ㅋㅋ"
+    }
+  ],
+  "parse_errors": [],
+  "message": "ok"
+}
+```
 
-  ### Response (shape)
-  ```json
-  {
-    "summary": {
-      "total_messages": 1200,
-      "unique_users": 340,
-      "start_time": "2026-02-25T20:00:00",
-      "end_time": "2026-02-25T22:10:00",
-      "vod_duration_sec": 7800,
-      "vod_duration_label": "02:10:00",
-      "avg_messages_per_minute": 9.23
-    },
-    "volume_series": [
-      {
-        "bucket_start": "2026-02-25T20:00:00",
-        "bucket_start_offset_sec": 0,
-        "bucket_start_offset_label": "00:00:00",
-        "total_messages": 13,
-        "unique_users": 11
-      }
-    ],
-    "keyword_series": [
-      {
-        "bucket_start": "2026-02-25T20:00:00",
-        "bucket_start_offset_sec": 0,
-        "bucket_start_offset_label": "00:00:00",
-        "keyword": "헉",
-        "count": 4
-      }
-    ],
-    "highlights": [
-      {
-        "start": "2026-02-25T20:41:00",
-        "start_offset_sec": 2460,
-        "start_offset_label": "00:41:00",
-        "end": "2026-02-25T20:42:00",
-        "end_offset_sec": 2520,
-        "end_offset_label": "00:42:00",
-        "score": 2.81,
-        "peak_bucket": "2026-02-25T20:41:30",
-        "peak_offset_sec": 2490,
-        "peak_offset_label": "00:41:30",
-        "peak_total_messages": 28,
-        "representative_keyword": "헉"
-      }
-    ],
-    "parse_errors": [],
-    "message": "ok"
-  }
-  ```
+#### 타임스탬프 규칙
 
-  ### Validation
-  - `source.vod_id`: required
-  - `options.bucket_size_seconds`: `5..300`
-  - `options.max_highlights`: `1..200`
-  - `options.keyword_options.mode`: `contains | exact`
-  - `options.normalize_repeated_reactions`: default `true`
-  - `options.normalize_repeated_laugh`: deprecated alias (auto-mapped)
+- `playerMessageTime` 기반 로그: `bucket_start` 가 `1970-01-01T...` 형태 (epoch-relative UTC)
+- `offset_sec` / `offset_label` 이 VOD 플레이어의 실제 재생 위치와 직접 대응
+- VOD 링크 생성: `https://chzzk.naver.com/video/{vod_id}?t={start_offset_sec}`
 
-  ### Keyword normalization note
-  `normalize_repeated_reactions=true`일 때:
-  - `ㅋ/ㅎ/ㅠ/ㅜ` 반복이 축약된다.
-  - `허어어억`, `허어어어어어억` 등은 `헉`으로 정규화되어 같은 키워드로 집계된다.
+---
 
-  ## 2) Export
+## 캐시 동작
 
-  ### Request
-  ```json
-  {
-    "analysis": {
-      "source": { "vod_id": "11933431" },
-      "keywords": ["헉", "ㅋㅋㅋㅋ"],
-      "options": {
-        "bucket_size_seconds": 30,
-        "keyword_options": {
-          "mode": "contains",
-          "case_sensitive": false
-        },
-        "normalize_repeated_reactions": true,
-        "min_highlight_score": 1.2,
-        "max_highlights": 20
-      }
-    },
-    "format": "json",
-    "dataset": "all"
-  }
-  ```
-
-  ### Params
-  - `format`: `json | csv`
-  - `dataset`: `summary | highlights | volume | keywords | parse_errors | all`
-
-  ### Behavior
-  - `format=json`: 지정 dataset JSON 반환
-  - `format=csv`: 지정 dataset CSV 반환
-  - `format=csv` + `dataset=all`: `400` 반환
-
-  ## 3) Error semantics
-  - `400`: 잘못된 입력/지원하지 않는 dataset
-  - `500`: 파싱/분석 중 내부 오류
-  - 분석 실패 시 `parse_errors` 또는 HTTP 오류 detail을 확인
+- 동일 `vod_id` 재요청 → `backend/data/chatlogs/chatLog-{vod_id}.log` 재사용
+- 캐시 최대 5개 유지 (LRU), 초과 시 가장 오래된 파일 삭제
+- 강제 재수집: 해당 `.log` 파일 삭제 후 재요청
