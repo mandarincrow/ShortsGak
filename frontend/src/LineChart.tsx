@@ -275,8 +275,8 @@ export function LineChart({
             <line x1={CHART_PADDING} y1={height - CHART_PADDING} x2={SVG_WIDTH - CHART_PADDING} y2={height - CHART_PADDING} stroke="#cbd5e1" strokeWidth="1" />
             <line x1={CHART_PADDING} y1={CHART_PADDING} x2={CHART_PADDING} y2={height - CHART_PADDING} stroke="#cbd5e1" strokeWidth="1" />
 
-            <text x={8} y={CHART_PADDING + 4} fontSize="11" fill="#64748b">{maxY}</text>
-            <text x={8} y={height - CHART_PADDING + 4} fontSize="11" fill="#64748b">0</text>
+            <text x={8} y={CHART_PADDING + 4} fontSize="11" fill="#5a4248">{maxY}</text>
+            <text x={8} y={height - CHART_PADDING + 4} fontSize="11" fill="#5a4248">0</text>
 
             <path d={path} fill="none" stroke={lineColor} strokeWidth="2" />
 
@@ -284,7 +284,7 @@ export function LineChart({
               <line
                 x1={getX(focusedIndex)} y1={CHART_PADDING}
                 x2={getX(focusedIndex)} y2={height - CHART_PADDING}
-                stroke="#f59e0b" strokeWidth="2"
+                stroke="#935260" strokeWidth="2"
               />
             )}
 
@@ -294,7 +294,7 @@ export function LineChart({
               return (
                 <g key={`tick-${p.x}-${idx}`}>
                   <line x1={x} y1={height - CHART_PADDING} x2={x} y2={height - CHART_PADDING + 5} stroke="#94a3b8" strokeWidth="1" />
-                  <text x={x} y={height - CHART_PADDING + 16} fontSize="10" fill="#64748b" textAnchor="middle">
+                  <text x={x} y={height - CHART_PADDING + 16} fontSize="10" fill="#5a4248" textAnchor="middle">
                     {p.xLabel}
                   </text>
                 </g>
@@ -319,7 +319,7 @@ export function LineChart({
               <circle
                 key={`point-${p.x}-${idx}`}
                 cx={getX(idx)} cy={getY(idx)} r="6"
-                fill={idx === focusedIndex ? "#f59e0b" : lineColor}
+                fill={idx === focusedIndex ? "#935260" : lineColor}
                 fillOpacity="0"
                 style={{ cursor: "pointer" }}
                 onMouseEnter={() => setHoveredIndex(idx)}

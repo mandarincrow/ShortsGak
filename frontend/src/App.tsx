@@ -186,7 +186,10 @@ export function App() {
 
   return (
     <main className="container">
-      <h1>chatLog 편집점 분석기</h1>
+      <div className="page-header">
+        <h1>chatLog 편집점 분석기</h1>
+        <span className="page-header-sub">Chzzk VOD 채팅 기반 편집점 탐색기</span>
+      </div>
       <section className="panel">
         <h2>분석 입력</h2>
         <label>
@@ -332,7 +335,7 @@ export function App() {
         <LineChart
           title="채팅량 추이 (버킷별)"
           points={volumeChartPoints}
-          lineColor="#2563eb"
+          lineColor="#d49fac"
           markers={highlightMarkers}
           focusedX={focusedPeakBucket}
           onClearFocus={() => setFocusedPeakBucket(null)}
@@ -341,7 +344,7 @@ export function App() {
         <LineChart
           title="키워드 발생량 추이 (합산)"
           points={keywordChartPoints}
-          lineColor="#7c3aed"
+          lineColor="#8dad18"
           focusedX={focusedPeakBucket}
           onClearFocus={() => setFocusedPeakBucket(null)}
         />
