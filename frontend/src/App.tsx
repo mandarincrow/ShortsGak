@@ -172,7 +172,7 @@ export function App() {
   return (
     <main className="container">
       <div className="page-header">
-        <h1>chatLog 편집점 분석기</h1>
+        <h1>쇼츠각 편집점 분석기</h1>
         <span className="page-header-sub">Chzzk VOD 채팅 기반 편집점 탐색기</span>
       </div>
       <section className="panel">
