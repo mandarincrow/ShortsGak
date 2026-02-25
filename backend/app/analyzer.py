@@ -204,9 +204,14 @@ def _detect_highlights(
         idx for idx, score in enumerate(scores) if score >= options.min_highlight_score
     ]
 
+    max_merge_buckets = options.max_merge_buckets
     merged_ranges: list[list[int]] = []
     for idx in candidate_indices:
-        if not merged_ranges or idx > merged_ranges[-1][-1] + 1:
+        if (
+            not merged_ranges
+            or idx > merged_ranges[-1][-1] + 1
+            or (merged_ranges[-1][1] - merged_ranges[-1][0] + 1) >= max_merge_buckets
+        ):
             merged_ranges.append([idx, idx])
         else:
             merged_ranges[-1][1] = idx

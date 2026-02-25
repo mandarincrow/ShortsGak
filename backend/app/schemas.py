@@ -23,6 +23,7 @@ class AnalyzeOptions(BaseModel):
     )
     min_highlight_score: float = 1.2
     max_highlights: int = Field(default=20, ge=1, le=200)
+    max_merge_buckets: int = Field(default=2, ge=1, le=20, description="병합 허용 최대 버킷 수")
 
     @model_validator(mode="before")
     @classmethod
