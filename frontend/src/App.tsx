@@ -273,11 +273,8 @@ export function App() {
         )}
 
         <div className="actions">
-          <button onClick={() => handleExport("json", "all")} disabled={exporting || loading}>
-            {exporting ? "내보내는 중..." : "전체 JSON 다운로드"}
-          </button>
           <button onClick={() => handleExport("csv", "highlights")} disabled={exporting || loading}>
-            하이라이트 CSV 다운로드
+            {exporting ? "내보내는 중..." : "하이라이트 CSV 다운로드"}
           </button>
         </div>
       </section>
