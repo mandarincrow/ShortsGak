@@ -1,0 +1,174 @@
+:root {
+  font-family: Arial, sans-serif;
+  color: #1f2937;
+  background: #f8fafc;
+}
+
+body {
+  margin: 0;
+}
+
+.container {
+  max-width: 920px;
+  margin: 24px auto;
+  padding: 0 16px 32px;
+}
+
+h1 {
+  margin-bottom: 16px;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+input {
+  display: block;
+  margin-top: 6px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.recent-vod {
+  margin-bottom: 12px;
+}
+
+.recent-vod-title {
+  margin: 0 0 8px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip-button {
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+.highlight-button {
+  width: 100%;
+  text-align: left;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+  padding: 8px 10px;
+}
+
+.highlight-button.active {
+  background: #fde68a;
+  border-color: #f59e0b;
+  color: #78350f;
+}
+
+.highlight-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.vod-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.highlight-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.error {
+  color: #dc2626;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.chart-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chart-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.mini-button {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.chart-svg {
+  width: 100%;
+  min-width: 720px;
+  height: 240px;
+  display: block;
+}
