@@ -40,6 +40,9 @@ function buildPath(points: DataPoint[], width: number, height: number, padding: 
     .join(" ");
 }
 
+const ZOOM_MIN_WINDOW = 10;
+const ZOOM_STEPS = [10, 20, 40, 80, 160, 320, 640, 1280, Infinity];
+
 export function LineChart({
   title,
   points,
@@ -50,16 +53,43 @@ export function LineChart({
   onClearFocus = null,
 }: LineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const zoomWindowSize = 80;
+  // null = 전체 보기, number = 표시할 포인트 수
+  const [windowSize, setWindowSize] = useState<number | null>(null);
 
   const fullIndexMap = new Map(points.map((point, index) => [point.x, index]));
   const focusedSourceIndex = focusedX ? fullIndexMap.get(focusedX) : undefined;
-  const shouldZoom = focusedSourceIndex !== undefined && points.length > zoomWindowSize;
 
-  const viewStart = shouldZoom
-    ? Math.max(0, Math.min(points.length - zoomWindowSize, focusedSourceIndex - Math.floor(zoomWindowSize / 2)))
-    : 0;
-  const viewEnd = shouldZoom ? Math.min(points.length - 1, viewStart + zoomWindowSize - 1) : points.length - 1;
+  // 유효 윈도우: 명시적 windowSize 우선, 없으면 전체
+  const effectiveWindow = windowSize !== null ? windowSize : points.length;
+  const clampedWindow = Math.min(effectiveWindow, points.length);
+  // 뷰 중심: 포커스된 포인트 > 전체 중간
+  const centerIndex = focusedSourceIndex ?? Math.floor(points.length / 2);
+  const viewStart = Math.max(0, Math.min(points.length - clampedWindow, centerIndex - Math.floor(clampedWindow / 2)));
+  const viewEnd = Math.min(points.length - 1, viewStart + clampedWindow - 1);
+
+  const isFullView = windowSize === null || clampedWindow >= points.length;
+
+  const handleZoomIn = () => {
+    const current = windowSize !== null ? windowSize : points.length;
+    const filtered = ZOOM_STEPS.filter((s) => s < current);
+    const next = filtered.length > 0 ? filtered[filtered.length - 1] : ZOOM_MIN_WINDOW;
+    setWindowSize(Math.max(ZOOM_MIN_WINDOW, next));
+  };
+
+  const handleZoomOut = () => {
+    const current = windowSize !== null ? windowSize : points.length;
+    const next = ZOOM_STEPS.find((s) => s > current) ?? Infinity;
+    if (next >= points.length) {
+      setWindowSize(null);
+    } else {
+      setWindowSize(next);
+    }
+  };
+
+  const handleReset = () => {
+    setWindowSize(null);
+    onClearFocus?.();
+  };
 
   const displayPoints = points.slice(viewStart, viewEnd + 1);
   const displayPointXSet = new Set(displayPoints.map((point) => point.x));
@@ -95,18 +125,36 @@ export function LineChart({
         <p>표시할 데이터가 없습니다.</p>
       ) : (
         <div className="chart-wrapper">
-          {shouldZoom ? (
-            <div className="chart-meta">
-              <span>
-                확대 구간: {displayPoints[0].xLabel} ~ {displayPoints[displayPoints.length - 1].xLabel}
-              </span>
-              {onClearFocus ? (
-                <button className="mini-button" onClick={onClearFocus}>
+          <div className="chart-meta">
+            <span>
+              {isFullView
+                ? `전체 (${points.length}개 버킷)`
+                : `${displayPoints[0]?.xLabel} ~ ${displayPoints[displayPoints.length - 1]?.xLabel} (${displayPoints.length}/${points.length})`}
+            </span>
+            <div className="chart-controls">
+              <button
+                className="mini-button"
+                onClick={handleZoomIn}
+                disabled={clampedWindow <= ZOOM_MIN_WINDOW}
+                title="확대"
+              >
+                + 확대
+              </button>
+              <button
+                className="mini-button"
+                onClick={handleZoomOut}
+                disabled={isFullView}
+                title="축소"
+              >
+                − 축소
+              </button>
+              {(!isFullView || focusedX) ? (
+                <button className="mini-button" onClick={handleReset}>
                   전체 보기
                 </button>
               ) : null}
             </div>
-          ) : null}
+          </div>
           <svg viewBox={`0 0 ${width} ${height}`} className="chart-svg" role="img" aria-label={title}>
             <line
               x1={padding}

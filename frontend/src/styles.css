@@ -158,6 +158,12 @@ ol {
   font-size: 12px;
 }
 
+.chart-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .mini-button {
   background: #e2e8f0;
   color: #0f172a;
