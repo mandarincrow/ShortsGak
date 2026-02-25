@@ -27,6 +27,7 @@ desktop_launcher/.venv/
 build/
 dist/
 *.spec.bak
+*.zip
 
 # Node / Frontend
 frontend/node_modules/

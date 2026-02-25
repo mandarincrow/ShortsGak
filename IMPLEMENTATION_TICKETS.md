@@ -7,6 +7,7 @@
 ### D-01 Windows exe 빌드 파이프라인
 - `scripts/build.bat`로 프론트 빌드 + Python 의존성 설치 + PyInstaller 빌드 자동화
 - 산출물: `dist/ShortsGak/ShortsGak.exe`
+- 실행 중 프로세스 잠금 대응(`ShortsGak.exe` 종료 후 빌드)
 
 ### D-02 데스크톱 실행 경로 안정화
 - `run_desktop.py`에서 내부 FastAPI를 동적 포트로 기동
@@ -23,6 +24,16 @@
 ### D-05 UX 기본 요구 반영
 - VOD ID 입력, 최근 VOD 캐시, 하이라이트 포커스, 차트 라벨/툴팁
 - JSON/CSV 내보내기
+
+### D-06 릴리즈 ZIP 패키징 자동화
+- `scripts/package_release.bat` 추가
+- `scripts/build.bat [version]`에서 ZIP 자동 생성 연동
+- 산출물: `release/ShortsGak-win64-<version>.zip`
+- ZIP 내부 사용자 안내 `README.txt` 포함
+
+### D-07 문서/라이선스 정리
+- 사용자/개발자 문서 분리 (`README.md`, `README_DEVELOPER.md`)
+- MIT 라이선스 파일 추가 (`LICENSE`)
 
 ## 2) 다음 우선순위 (Next)
 
@@ -41,13 +52,19 @@
 ### N-03 릴리즈 패키징
 - 목표: 비개발자 배포 가능 상태
 - 작업:
-  - `dist/ShortsGak` ZIP 생성 스크립트
   - 설치형 패키지(Inno Setup 또는 MSIX) 초안
+  - 코드서명 적용 전략 수립
 
 ### N-04 회귀 검증 자동화(최소)
 - 목표: 수정 후 핵심 플로우 깨짐 방지
 - 작업:
-  - 빌드 후 smoke test: 앱 기동, `/health`, 분석 1회
+  - 빌드 후 smoke test: 앱 기동, `/health`, 분석 1회, ZIP 생성 확인
+
+### N-05 릴리즈 운영 메타데이터
+- 목표: 배포 산출물 추적성 확보
+- 작업:
+  - 버전 규칙 확정(`vX.Y.Z`)
+  - 릴리즈 노트 템플릿/체인지로그 템플릿 추가
 
 ## 3) 보류/아이디어 (Backlog)
 - 진단 번들(zip) 내보내기

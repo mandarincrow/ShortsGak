@@ -55,6 +55,33 @@ scripts\build.bat
 산출물:
 - `dist/ShortsGak/ShortsGak.exe`
 
+## Release ZIP 패키징
+
+### 빌드와 함께 ZIP 생성
+`scripts\build.bat` 실행 시 자동으로 `release/`에 ZIP이 생성됩니다.
+
+### ZIP만 별도 생성
+```bat
+scripts\package_release.bat
+```
+
+버전을 직접 지정하려면:
+```bat
+scripts\package_release.bat v0.1.0
+```
+
+산출물 예시:
+- `release/ShortsGak-win64-v0.1.0.zip`
+- ZIP 내부에 사용자 안내용 `README.txt`가 함께 포함됩니다.
+
+## 권장 릴리즈 절차
+1. `scripts\\build.bat vX.Y.Z` 실행
+2. 산출물 확인
+	- `dist/ShortsGak/ShortsGak.exe`
+	- `release/ShortsGak-win64-vX.Y.Z.zip`
+3. ZIP 압축 해제 후 exe 스모크 테스트
+4. 이상 없으면 릴리즈 업로드
+
 ## 로그 위치
 - 개발 실행 로그: `backend/logs/app.log`
 - 실행파일 로그: `dist/ShortsGak/_internal/backend/logs/app.log`
@@ -71,3 +98,4 @@ scripts\build.bat
 - 상태 요약: `DEVELOPMENT_START.md`
 - 작업 큐: `IMPLEMENTATION_TICKETS.md`
 - Windows 배포: `WINDOWS_PORTING_PLAN.md`
+- 사용자 문서: `README.md`

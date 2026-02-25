@@ -20,6 +20,14 @@
 - 키워드 정규화 고도화
   - `헉`, `허어어억`, `허어어어어어억`을 동일 키워드로 집계
   - 중복 키워드 입력 시 이중 카운트 방지
+- 릴리즈 ZIP 자동화
+  - `scripts/package_release.bat` 추가
+  - `scripts/build.bat [version]` 실행 시 exe 빌드 + ZIP 생성까지 자동 수행
+  - ZIP 내부에 사용자 안내 `README.txt` 포함
+- 문서 체계 정리
+  - 루트 `README.md`를 일반 사용자 중심으로 단순화
+  - 개발자용 문서 분리: `README_DEVELOPER.md`
+  - 라이선스 확정: `MIT` (`LICENSE` 추가)
 
 ## 3) 주요 디렉터리
 - `backend/app`: API/파서/분석 엔진
@@ -39,6 +47,11 @@
 1. 루트에서 `scripts\build.bat`
 2. 결과물 확인: `dist\ShortsGak\ShortsGak.exe`
 
+### 릴리즈 ZIP 생성
+1. 빌드+패키징 동시: `scripts\build.bat v0.1.0`
+2. ZIP만 생성: `scripts\package_release.bat v0.1.0`
+3. 결과물 확인: `release\ShortsGak-win64-v0.1.0.zip`
+
 ## 5) 로그 위치(장애 분석 기준)
 - 앱 실행 로그(개발): `backend/logs/app.log`
 - 앱 실행 로그(배포 exe): `dist/ShortsGak/_internal/backend/logs/app.log`
@@ -52,4 +65,4 @@
 ## 7) 다음 우선순위 제안
 1. `%LOCALAPPDATA%/ShortsGak` 기반 로그/캐시 경로 정착
 2. 에러 발생 시 UI에서 로그 열기/복사 UX 제공
-3. 릴리즈 패키징(압축/설치본) 자동화
+3. 설치형 배포(Inno Setup/MSIX) 및 코드서명 체계 도입
