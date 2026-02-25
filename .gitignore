@@ -28,6 +28,7 @@ build/
 dist/
 *.spec.bak
 *.zip
+release/
 
 # Node / Frontend
 frontend/node_modules/
