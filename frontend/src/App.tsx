@@ -294,7 +294,7 @@ export function App() {
                     {vodId.trim() ? (
                       <a
                         className="vod-link-button"
-                        href={`https://chzzk.naver.com/video/${vodId.trim()}?t=${formatOffsetForVodUrl(item.start_offset_sec)}`}
+                        href={`https://chzzk.naver.com/video/${vodId.trim()}?currentTime=${formatOffsetForVodUrl(item.start_offset_sec)}`}
                         target="_blank"
                         rel="noreferrer"
                       >
