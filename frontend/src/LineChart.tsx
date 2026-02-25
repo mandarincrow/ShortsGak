@@ -19,6 +19,11 @@ type LineChartProps = {
   height?: number;
   focusedX?: string | null;
   onClearFocus?: (() => void) | null;
+  // lifted state — shared across charts
+  windowSize: number | null;
+  panCenter: number | null;
+  onWindowSizeChange: (v: number | null) => void;
+  onPanCenterChange: (v: number | null) => void;
 };
 
 // R2 fix: single source-of-truth for chart padding
@@ -61,11 +66,12 @@ export function LineChart({
   height = 220,
   focusedX = null,
   onClearFocus = null,
+  windowSize,
+  panCenter,
+  onWindowSizeChange,
+  onPanCenterChange,
 }: LineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [windowSize, setWindowSize] = useState<number | null>(null);
-  // panCenter: null = auto (follows focusedX or midpoint), number = explicit index
-  const [panCenter, setPanCenter] = useState<number | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const minimapRef = useRef<SVGSVGElement>(null);
@@ -94,21 +100,22 @@ export function LineChart({
   const displayPointXSet = new Set(displayPoints.map((p) => p.x));
   const displayMarkers = markers.filter((m) => displayPointXSet.has(m.x));
 
-  // Sync panCenter + windowSize when focusedX changes
+  // Sync panCenter + windowSize (lifted) when focused highlight changes
   useEffect(() => {
     if (focusedSourceIndex !== undefined) {
-      setPanCenter(focusedSourceIndex);
-      setWindowSize(40);
+      onPanCenterChange(focusedSourceIndex);
+      onWindowSizeChange(40);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusedSourceIndex]);
 
   // ── Panning ───────────────────────────────────────────────────────────────
 
   const panTo = useCallback(
     (center: number) => {
-      setPanCenter(Math.max(0, Math.min(points.length - 1, center)));
+      onPanCenterChange(Math.max(0, Math.min(points.length - 1, center)));
     },
-    [points.length]
+    [points.length, onPanCenterChange]
   );
 
   // R5 fix: typed ref, initialized once; kept current via assignment in render body
@@ -126,18 +133,18 @@ export function LineChart({
   const handleZoomIn = () => {
     const cur = windowSize ?? points.length;
     const filtered = ZOOM_STEPS.filter((s) => s < cur);
-    setWindowSize(Math.max(ZOOM_MIN_WINDOW, filtered.length > 0 ? filtered[filtered.length - 1] : ZOOM_MIN_WINDOW));
+    onWindowSizeChange(Math.max(ZOOM_MIN_WINDOW, filtered.length > 0 ? filtered[filtered.length - 1] : ZOOM_MIN_WINDOW));
   };
 
   const handleZoomOut = () => {
     const cur = windowSize ?? points.length;
     const next = ZOOM_STEPS.find((s) => s > cur) ?? Infinity;
-    setWindowSize(next >= points.length ? null : next);
+    onWindowSizeChange(next >= points.length ? null : next);
   };
 
   const handleReset = () => {
-    setWindowSize(null);
-    setPanCenter(null);
+    onWindowSizeChange(null);
+    onPanCenterChange(null);
     onClearFocus?.();
   };
 

@@ -44,6 +44,8 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [focusedPeakBucket, setFocusedPeakBucket] = useState<string | null>(null);
+  const [chartWindowSize, setChartWindowSize] = useState<number | null>(null);
+  const [chartPanCenter, setChartPanCenter] = useState<number | null>(null);
   const chartSectionRef = useRef<HTMLDivElement | null>(null);
 
   const keywordList = useMemo(
@@ -339,6 +341,10 @@ export function App() {
           markers={highlightMarkers}
           focusedX={focusedPeakBucket}
           onClearFocus={() => setFocusedPeakBucket(null)}
+          windowSize={chartWindowSize}
+          panCenter={chartPanCenter}
+          onWindowSizeChange={setChartWindowSize}
+          onPanCenterChange={setChartPanCenter}
         />
 
         <LineChart
@@ -347,6 +353,10 @@ export function App() {
           lineColor="#8dad18"
           focusedX={focusedPeakBucket}
           onClearFocus={() => setFocusedPeakBucket(null)}
+          windowSize={chartWindowSize}
+          panCenter={chartPanCenter}
+          onWindowSizeChange={setChartWindowSize}
+          onPanCenterChange={setChartPanCenter}
         />
       </div>
     </main>
