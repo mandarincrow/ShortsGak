@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
-import { analyzeChatLog, exportAnalysisFile } from "./api";
+import { analyzeChatLog } from "./api";
 import { LineChart } from "./LineChart";
-import type { AnalyzeRequest, AnalyzeResponse, ExportDataset, ExportFormat } from "./types";
+import type { AnalyzeRequest, AnalyzeResponse } from "./types";
 
 const RECENT_VOD_IDS_KEY = "chatlog_analyzer_recent_vod_ids";
 const MAX_RECENT_VOD_IDS = 5;
@@ -40,7 +40,6 @@ export function App() {
   const [bucketSize, setBucketSize] = useState(30);
   const [minScore, setMinScore] = useState(1.2);
   const [loading, setLoading] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [focusedPeakBucket, setFocusedPeakBucket] = useState<string | null>(null);
@@ -139,22 +138,6 @@ export function App() {
       setError(requestError instanceof Error ? requestError.message : "알 수 없는 오류");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleExport = async (format: ExportFormat, dataset: ExportDataset) => {
-    setExporting(true);
-    setError(null);
-    try {
-      await exportAnalysisFile({
-        analysis: buildCurrentAnalyzePayload(),
-        format,
-        dataset,
-      });
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "내보내기 오류");
-    } finally {
-      setExporting(false);
     }
   };
 
@@ -272,11 +255,7 @@ export function App() {
           </ul>
         )}
 
-        <div className="actions">
-          <button onClick={() => handleExport("csv", "highlights")} disabled={exporting || loading}>
-            {exporting ? "내보내는 중..." : "하이라이트 CSV 다운로드"}
-          </button>
-        </div>
+
       </section>
 
       <section className="panel">
