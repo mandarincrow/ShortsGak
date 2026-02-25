@@ -178,3 +178,29 @@ ol {
   height: 240px;
   display: block;
 }
+
+.chart-minimap {
+  width: 100%;
+  min-width: 720px;
+  height: 44px;
+  display: block;
+  margin-top: 4px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+
+.chart-range-label {
+  font-size: 12px;
+  color: #334155;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-reset-btn {
+  background: #fde68a;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+}

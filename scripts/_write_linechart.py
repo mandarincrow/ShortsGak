@@ -1,3 +1,9 @@
+"""Rewrites frontend/src/LineChart.tsx — post code-review improved version."""
+import pathlib
+
+DEST = pathlib.Path(__file__).parent.parent / "frontend" / "src" / "LineChart.tsx"
+
+CONTENT = """\
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type DataPoint = {
@@ -384,3 +390,7 @@ export function LineChart({
     </section>
   );
 }
+"""
+
+DEST.write_text(CONTENT, encoding="utf-8")
+print(f"Written {len(CONTENT)} chars  ({CONTENT.count(chr(10))} lines) -> {DEST}")
