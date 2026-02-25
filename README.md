@@ -32,7 +32,7 @@ ShortsGak은 치지직 VOD 채팅 로그를 분석해 하이라이트 후보 구
 - 인터넷 연결 상태를 확인해 주세요.
 
 ## 로그 파일 위치
-- 실행파일 로그: `dist/ShortsGak/_internal/backend/logs/app.log`
+- 실행파일 로그: `ShortsGak/_internal/backend/logs/app.log`
 
 로그 내용을 전달해 주시면 원인 파악을 빠르게 도와드릴 수 있습니다.
 
