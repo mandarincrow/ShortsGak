@@ -94,10 +94,11 @@ export function LineChart({
   const displayPointXSet = new Set(displayPoints.map((p) => p.x));
   const displayMarkers = markers.filter((m) => displayPointXSet.has(m.x));
 
-  // Sync panCenter when focusedX changes
+  // Sync panCenter + windowSize when focusedX changes
   useEffect(() => {
     if (focusedSourceIndex !== undefined) {
       setPanCenter(focusedSourceIndex);
+      setWindowSize(40);
     }
   }, [focusedSourceIndex]);
 
