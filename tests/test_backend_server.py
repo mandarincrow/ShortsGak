@@ -120,18 +120,35 @@ class TestBackendServerProcess:
             proc.kill()
 
     def test_emits_listening_port_to_stdout(self, server):
-        """서버 시작 시 stdout 첫 줄에 LISTENING_PORT=<N> 이 출력된다."""
+        """서버 시작 시 stdout 에 LISTENING_PORT=<N> 이 출력된다.
+
+        readline() 은 블로킹 호출이므로, 별도 스레드에서 읽어 메인 스레드에서
+        타임아웃을 적용한다. 서버가 stdout 에 아무것도 쓰지 않고 대기하거나
+        충돌해 EOF 가 발생하는 경우 모두 5초 내에 테스트가 종료된다.
+        """
+        import queue
+        import threading
+
         proc, port = server
-        # 최대 5초 대기
-        proc.stdout._sock.settimeout(5) if hasattr(proc.stdout, '_sock') else None
-        deadline = time.monotonic() + 5
-        while time.monotonic() < deadline:
-            line = proc.stdout.readline()
-            if line.startswith("LISTENING_PORT="):
-                emitted_port = int(line.strip().split("=")[1])
-                assert emitted_port == port
-                return
-        pytest.fail("LISTENING_PORT= 가 5초 내에 stdout에 출력되지 않았습니다.")
+        result: queue.Queue[str] = queue.Queue()
+
+        def _reader():
+            for line in proc.stdout:
+                result.put(line)
+                if line.startswith("LISTENING_PORT="):
+                    return  # 찾은 즉시 종료
+
+        t = threading.Thread(target=_reader, daemon=True)
+        t.start()
+
+        try:
+            line = result.get(timeout=5)
+        except queue.Empty:
+            pytest.fail("LISTENING_PORT= 가 5초 내에 stdout에 출력되지 않았습니다.")
+
+        assert line.startswith("LISTENING_PORT="), f"예기치 않은 출력: {line!r}"
+        emitted_port = int(line.strip().split("=")[1])
+        assert emitted_port == port
 
     def test_health_endpoint_returns_200(self, server):
         """서버 시작 후 /health 가 200 을 반환해야 한다."""
