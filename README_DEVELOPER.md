@@ -104,7 +104,7 @@ electron/
 Electron 실행 흐름:
 1. `findFreePort()` → 가용 포트(N) 확보
 2. `resources/backend/backend.exe --port N` spawn (frozen) / `dist/backend/backend.exe` (dev)
-3. stdout readline — `LISTENING_PORT=N` 수신 (30수 타임아웃)
+3. stdout readline — `LISTENING_PORT=N` 수신 (30초 타임아웃)
 4. `GET http://127.0.0.1:N/health` 폴링 (250ms 간격)
 5. `BrowserWindow(1100×760)` → `loadURL(http://127.0.0.1:N)`
 6. 창 닫힐 시 `backendProc.kill()` → `app.quit()`
