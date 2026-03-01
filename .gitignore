@@ -47,6 +47,7 @@ logs/
 *.log
 *.tmp
 *.temp
+*.dll
 
 # Runtime data caches
 backend/data/chatlogs/

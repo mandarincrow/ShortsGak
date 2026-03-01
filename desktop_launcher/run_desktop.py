@@ -77,20 +77,70 @@ def start_server_thread(port: int) -> threading.Thread:
     return thread
 
 
+def _is_webview2_installed() -> bool:
+    """Windows: WebView2 런타임 레지스트리 설치 여부 확인."""
+    try:
+        import winreg  # noqa: PLC0415
+    except ImportError:
+        return False  # Windows가 아님
+    _KEYS = [
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"),
+        (winreg.HKEY_CURRENT_USER,  r"SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"),
+    ]
+    for hive, key in _KEYS:
+        try:
+            with winreg.OpenKey(hive, key):
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _can_use_webview() -> bool:
+    """플랫폼별 pywebview 사용 가능 여부 확인.
+
+    - Windows: WebView2 레지스트리 설치 여부
+    - Linux/macOS: pywebview import 가능 여부 (GTK/Qt 백엔드 존재 여부)
+    """
+    if sys.platform == "win32":
+        return _is_webview2_installed()
+    try:
+        import webview  # noqa: PLC0415
+        return True
+    except Exception:
+        return False
+
+
+def _run_in_browser_fallback(base_url: str) -> None:
+    """WebView2 없는 환경에서 기본 브라우저로 앱을 열고 tkinter로 서버를 유지합니다."""
+    import tkinter as tk  # noqa: PLC0415
+    import webbrowser  # noqa: PLC0415
+
+    webbrowser.open(base_url)
+
+    root = tk.Tk()
+    root.title("ShortsGak")
+    root.resizable(False, False)
+
+    # 창 크기 및 위치
+    w, h = 360, 120
+    sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+    root.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
+
+    tk.Label(
+        root,
+        text="ShortsGak이 브라우저에서 실행 중입니다.\n이 창을 닫으면 앱이 종료됩니다.",
+        pady=16,
+        font=("Segoe UI", 10),
+    ).pack()
+    tk.Button(root, text="종료", command=root.destroy, width=12).pack()
+
+    root.mainloop()
+
+
 def main() -> None:
     _setup_sys_path()
-
-    import webview  # noqa: PLC0415 – 플랫폼 구분 시 지연 import 허용
-
-    # ---------------------------------------------------------------------------
-    # 번들된 WebView2 Fixed Version 런타임 적용
-    # 배포 exe에는 vendor/webview2/ 가 _MEIPASS/webview2/ 로 포함됩니다
-    # 없으면 시스템 설치 WebView2 로 fallback (개발 환경 포함)
-    # ---------------------------------------------------------------------------
-    if hasattr(sys, "_MEIPASS"):
-        _bundled_wv2 = Path(sys._MEIPASS) / "webview2"
-        if _bundled_wv2.exists():
-            webview.settings["WEBVIEW2_RUNTIME_PATH"] = str(_bundled_wv2)
 
     port = find_free_port()
     base_url = f"http://{SERVER_HOST}:{port}"
@@ -98,14 +148,20 @@ def main() -> None:
     start_server_thread(port)
     wait_until_server_ready(base_url, SERVER_START_TIMEOUT_SECONDS)
 
-    webview.create_window(
-        title="ShortsGak Analyzer",
-        url=base_url,
-        min_size=(1100, 760),
-    )
-    # webview.start()는 blocking – 창이 닫히면 반환됩니다
-    # daemon 스레드인 uvicorn은 프로세스 종료 시 자동으로 정리됩니다
-    webview.start()
+    if _can_use_webview():
+        import webview  # noqa: PLC0415 – 플랫폼 구분 시 지연 import 허용
+
+        webview.create_window(
+            title="ShortsGak Analyzer",
+            url=base_url,
+            min_size=(1100, 760),
+        )
+        # webview.start()는 blocking – 창이 닫히면 반환됩니다
+        # daemon 스레드인 uvicorn은 프로세스 종료 시 자동으로 정리됩니다
+        webview.start()
+    else:
+        # WebView2 없음 → 기본 브라우저 fallback
+        _run_in_browser_fallback(base_url)
 
 
 if __name__ == "__main__":
@@ -131,7 +187,3 @@ if __name__ == "__main__":
         with open(crash_log, "w", encoding="utf-8") as f:
             traceback.print_exc(file=f)
         raise
-
-
-if __name__ == "__main__":
-    main()

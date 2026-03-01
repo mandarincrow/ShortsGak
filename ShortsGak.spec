@@ -34,12 +34,6 @@ added_datas = [
     (str(ROOT / "backend" / "app"), "backend/app"),
 ]
 
-# WebView2 Fixed Version Runtime – build.bat Step 3에서 vendor/webview2/ 에 다운로드됨
-# 폴더가 없으면 스킵 (시스템 WebView2 fallback)
-_webview2_dir = ROOT / "vendor" / "webview2"
-if _webview2_dir.exists():
-    added_datas.append((str(_webview2_dir), "webview2"))
-
 # ---------------------------------------------------------------------------
 # uvicorn 및 fastapi의 동적 로더는 PyInstaller가 자동 탐지하지 못하는 경우가 있음
 # ---------------------------------------------------------------------------
@@ -84,6 +78,10 @@ hidden_imports = [
     # pythonnet / CLR (webview.platforms.winforms 의존)
     "clr",
     "clr_loader",
+    # tkinter – WebView2 없는 환경에서 브라우저 fallback 창으로 사용
+    "tkinter",
+    "tkinter.font",
+    "tkinter.ttk",
 ]
 
 # ---------------------------------------------------------------------------
@@ -101,7 +99,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "matplotlib", "numpy", "scipy"],
+    excludes=["matplotlib", "numpy", "scipy"],  # tkinter는 WebView2 fallback에서 사용
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

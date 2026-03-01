@@ -85,35 +85,7 @@ if errorlevel 1 ( echo [ERROR] dependency install failed & exit /b 1 )
 call :step_done 2
 
 :: ── Step 3 ──────────────────────────────────────
-call :step_start 3 "WebView2  (Fixed Version Runtime)"
-set "WV2_DIR=%ROOT%\vendor\webview2"
-if exist "%WV2_DIR%\msedgewebview2.exe" (
-    echo  [SKIP] WebView2 fixed runtime already bundled: %WV2_DIR%
-) else (
-    if not exist "%WV2_DIR%" mkdir "%WV2_DIR%"
-    set "WV2_NUPKG=%TEMP%\Microsoft.Web.WebView2.nupkg"
-    set "WV2_EXTRACT=%TEMP%\webview2_nupkg"
-
-    echo  Querying latest WebView2 version from NuGet...
-    powershell -NoProfile -Command "$v = (Invoke-RestMethod 'https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/index.json').versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1; Write-Host \"  WebView2 NuGet version: $v\"; Invoke-WebRequest -Uri \"https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/$v/microsoft.web.webview2.$v.nupkg\" -OutFile '%WV2_NUPKG%' -UseBasicParsing"
-    if errorlevel 1 ( echo [ERROR] WebView2 runtime download failed & exit /b 1 )
-
-    if exist "%WV2_EXTRACT%" rmdir /s /q "%WV2_EXTRACT%"
-    mkdir "%WV2_EXTRACT%"
-    powershell -NoProfile -Command "Expand-Archive -Path '%WV2_NUPKG%' -DestinationPath '%WV2_EXTRACT%' -Force"
-    if errorlevel 1 ( echo [ERROR] WebView2 nupkg extraction failed & exit /b 1 )
-
-    xcopy /E /I /Y /Q "%WV2_EXTRACT%\runtimes\win-x64\native\" "%WV2_DIR%\" >nul
-    if errorlevel 1 ( echo [ERROR] WebView2 runtime copy failed & exit /b 1 )
-
-    del /f /q "%WV2_NUPKG%" >nul 2>&1
-    rmdir /s /q "%WV2_EXTRACT%" >nul 2>&1
-    echo  WebView2 fixed runtime bundled to: %WV2_DIR%
-)
-call :step_done 3
-
-:: ── Step 4 ──────────────────────────────────────
-call :step_start 4 "PyInstaller  (exe bundle)"
+call :step_start 3 "PyInstaller  (exe bundle)"
 taskkill /IM ShortsGak.exe /F >nul 2>&1
 
 "%VENV_PY%" -m pip install pyinstaller --quiet
@@ -122,13 +94,13 @@ if errorlevel 1 ( echo [ERROR] pyinstaller install failed & exit /b 1 )
 "%VENV_PY%" -m PyInstaller ShortsGak.spec --clean --noconfirm
 if errorlevel 1 ( echo [ERROR] pyinstaller build failed & exit /b 1 )
 
-call :step_done 4
+call :step_done 3
 
-:: ── Step 5 ──────────────────────────────────────
-call :step_start 5 "Release ZIP  (package_release.bat)"
+:: ── Step 4 ──────────────────────────────────────
+call :step_start 4 "Release ZIP  (package_release.bat)"
 call "%ROOT%\scripts\package_release.bat" %RELEASE_VERSION%
 if errorlevel 1 ( echo [ERROR] release zip packaging failed & exit /b 1 )
-call :step_done 5
+call :step_done 4
 
 :: ── Summary ─────────────────────────────────────
 echo.
@@ -160,10 +132,10 @@ exit /b 0
 :: %1 = step number (1-5), %2 = label
 echo.
 echo +---------------------------------------------
-echo ^|  Step %~1 / 5  :  %~2
+echo ^|  Step %~1 / 4  :  %~2
 echo ^|  %TIME%
 echo +---------------------------------------------
-powershell -NoProfile -Command "Write-Host ('  [%~1/5] ' + '%~2' + ' ...') -ForegroundColor Yellow" > CON
+powershell -NoProfile -Command "Write-Host ('  [%~1/4] ' + '%~2' + ' ...') -ForegroundColor Yellow" > CON
 exit /b 0
 
 :step_done
