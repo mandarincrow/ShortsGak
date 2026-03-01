@@ -1,8 +1,39 @@
 from __future__ import annotations
 
 import logging
+import os
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+
+def _get_log_dir() -> Path:
+    """로그 디렉터리 반환.
+
+    우선순위:
+    1. frozen(exe) 환경 → exe 옆 `logs/` 폴더 (쓰기 가능한 배포 위치)
+    2. 개발 환경 → 프로젝트 루트 `backend/logs/`
+    3. 1번에 쓰기 권한이 없으면 → %LOCALAPPDATA%/ShortsGak/logs/
+    """
+    if hasattr(sys, "_MEIPASS"):
+        # onedir: ShortsGak.exe 와 같은 폴더의 logs/
+        exe_dir = Path(sys.executable).parent
+        candidate = exe_dir / "logs"
+    else:
+        candidate = Path(__file__).resolve().parents[2] / "backend" / "logs"
+
+    try:
+        candidate.mkdir(parents=True, exist_ok=True)
+        # 실제 쓰기 가능 여부 확인
+        test_file = candidate / ".write_test"
+        test_file.touch()
+        test_file.unlink()
+        return candidate
+    except OSError:
+        # 쓰기 권한 없을 때 → %LOCALAPPDATA% 폴백
+        fallback = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "ShortsGak" / "logs"
+        fallback.mkdir(parents=True, exist_ok=True)
+        return fallback
 
 
 def configure_logging() -> None:
@@ -10,7 +41,7 @@ def configure_logging() -> None:
     if getattr(root_logger, "_chatlog_logging_configured", False):
         return
 
-    log_dir = Path(__file__).resolve().parents[1] / "logs"
+    log_dir = _get_log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "app.log"
 

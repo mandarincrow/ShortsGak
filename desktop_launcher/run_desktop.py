@@ -82,6 +82,16 @@ def main() -> None:
 
     import webview  # noqa: PLC0415 – 플랫폼 구분 시 지연 import 허용
 
+    # ---------------------------------------------------------------------------
+    # 번들된 WebView2 Fixed Version 런타임 적용
+    # 배포 exe에는 vendor/webview2/ 가 _MEIPASS/webview2/ 로 포함됩니다
+    # 없으면 시스템 설치 WebView2 로 fallback (개발 환경 포함)
+    # ---------------------------------------------------------------------------
+    if hasattr(sys, "_MEIPASS"):
+        _bundled_wv2 = Path(sys._MEIPASS) / "webview2"
+        if _bundled_wv2.exists():
+            webview.settings["WEBVIEW2_RUNTIME_PATH"] = str(_bundled_wv2)
+
     port = find_free_port()
     base_url = f"http://{SERVER_HOST}:{port}"
 
@@ -96,6 +106,31 @@ def main() -> None:
     # webview.start()는 blocking – 창이 닫히면 반환됩니다
     # daemon 스레드인 uvicorn은 프로세스 종료 시 자동으로 정리됩니다
     webview.start()
+
+
+if __name__ == "__main__":
+    import os
+    import traceback
+
+    try:
+        main()
+    except Exception:
+        # console=False 빌드에서는 예외가 화면에 안 뜨므로 파일에 기록
+        if hasattr(sys, "_MEIPASS"):
+            crash_log_dir = Path(sys.executable).parent / "logs"
+        else:
+            crash_log_dir = BASE_DIR / "backend" / "logs"
+
+        try:
+            crash_log_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            crash_log_dir = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "ShortsGak" / "logs"
+            crash_log_dir.mkdir(parents=True, exist_ok=True)
+
+        crash_log = crash_log_dir / "crash.log"
+        with open(crash_log, "w", encoding="utf-8") as f:
+            traceback.print_exc(file=f)
+        raise
 
 
 if __name__ == "__main__":

@@ -34,6 +34,12 @@ added_datas = [
     (str(ROOT / "backend" / "app"), "backend/app"),
 ]
 
+# WebView2 Fixed Version Runtime – build.bat Step 3에서 vendor/webview2/ 에 다운로드됨
+# 폴더가 없으면 스킵 (시스템 WebView2 fallback)
+_webview2_dir = ROOT / "vendor" / "webview2"
+if _webview2_dir.exists():
+    added_datas.append((str(_webview2_dir), "webview2"))
+
 # ---------------------------------------------------------------------------
 # uvicorn 및 fastapi의 동적 로더는 PyInstaller가 자동 탐지하지 못하는 경우가 있음
 # ---------------------------------------------------------------------------
@@ -71,9 +77,13 @@ hidden_imports = [
     "app.chatlog_fetcher",
     # pywebview
     "webview",
-    "webview.platforms.winforms",  # Windows 기본
-    "webview.platforms.gtk",       # Linux GTK
-    "webview.platforms.qt",        # Linux Qt
+    "webview.platforms.winforms",        # Windows WinForms wrapper (pythonnet)
+    "webview.platforms.edgechromium",    # Windows WebView2 (기본 백엔드)
+    "webview.platforms.gtk",             # Linux GTK
+    "webview.platforms.qt",              # Linux Qt
+    # pythonnet / CLR (webview.platforms.winforms 의존)
+    "clr",
+    "clr_loader",
 ]
 
 # ---------------------------------------------------------------------------

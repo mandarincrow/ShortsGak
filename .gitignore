@@ -28,6 +28,9 @@ build/
 dist/
 *.spec.bak
 *.zip
+
+# Vendored binaries (WebView2 Fixed Version Runtime – downloaded at build time)
+vendor/
 release/
 
 # Node / Frontend
