@@ -79,28 +79,43 @@ if not exist ".venv" (
 if not exist "%VENV_PY%" ( echo [ERROR] venv python missing: %VENV_PY% & exit /b 1 )
 
 "%VENV_PY%" -m pip install -U pip --quiet
-"%VENV_PY%" -m pip install -r backend\requirements.txt -r desktop_launcher\requirements.txt --quiet
+"%VENV_PY%" -m pip install -r backend\requirements.txt --quiet
 if errorlevel 1 ( echo [ERROR] dependency install failed & exit /b 1 )
 
 call :step_done 2
 
 :: ── Step 3 ──────────────────────────────────────
-call :step_start 3 "PyInstaller  (exe bundle)"
-taskkill /IM ShortsGak.exe /F >nul 2>&1
+call :step_start 3 "PyInstaller  (backend.exe bundle)"
 
 "%VENV_PY%" -m pip install pyinstaller --quiet
 if errorlevel 1 ( echo [ERROR] pyinstaller install failed & exit /b 1 )
 
-"%VENV_PY%" -m PyInstaller ShortsGak.spec --clean --noconfirm
+"%VENV_PY%" -m PyInstaller backend.spec --clean --noconfirm
 if errorlevel 1 ( echo [ERROR] pyinstaller build failed & exit /b 1 )
 
 call :step_done 3
 
 :: ── Step 4 ──────────────────────────────────────
-call :step_start 4 "Release ZIP  (package_release.bat)"
+call :step_start 4 "Electron build  (npm install + electron-builder)"
+cd electron
+
+where npm >nul 2>&1
+if errorlevel 1 ( echo [ERROR] npm not found. Install Node.js. & cd "%ROOT%" & exit /b 1 )
+
+call npm install
+if errorlevel 1 ( echo [ERROR] electron npm install failed & cd "%ROOT%" & exit /b 1 )
+
+call npx electron-builder
+if errorlevel 1 ( echo [ERROR] electron-builder failed & cd "%ROOT%" & exit /b 1 )
+
+cd "%ROOT%"
+call :step_done 4
+
+:: ── Step 5 ──────────────────────────────────────
+call :step_start 5 "Release ZIP  (package_release.bat)"
 call "%ROOT%\scripts\package_release.bat" %RELEASE_VERSION%
 if errorlevel 1 ( echo [ERROR] release zip packaging failed & exit /b 1 )
-call :step_done 4
+call :step_done 5
 
 :: ── Summary ─────────────────────────────────────
 echo.
@@ -108,7 +123,7 @@ echo ================================================
 echo  Build summary  %DATE% %TIME%
 echo ================================================
 
-set "EXE=%ROOT%\dist\ShortsGak\ShortsGak.exe"
+set "EXE=%ROOT%\electron\dist\win-unpacked\ShortsGak.exe"
 if exist "%EXE%" (
     for %%F in ("%EXE%") do echo  exe   : %%~fF  [%%~zF bytes]
 ) else (
@@ -132,10 +147,10 @@ exit /b 0
 :: %1 = step number (1-5), %2 = label
 echo.
 echo +---------------------------------------------
-echo ^|  Step %~1 / 4  :  %~2
+echo ^|  Step %~1 / 5  :  %~2
 echo ^|  %TIME%
 echo +---------------------------------------------
-powershell -NoProfile -Command "Write-Host ('  [%~1/4] ' + '%~2' + ' ...') -ForegroundColor Yellow" > CON
+powershell -NoProfile -Command "Write-Host ('  [%~1/5] ' + '%~2' + ' ...') -ForegroundColor Yellow" > CON
 exit /b 0
 
 :step_done

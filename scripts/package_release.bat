@@ -4,14 +4,14 @@ setlocal EnableExtensions EnableDelayedExpansion
 set "ROOT=%~dp0.."
 cd /d "%ROOT%"
 
-set "DIST_DIR=%ROOT%\dist\ShortsGak"
+set "DIST_DIR=%ROOT%\electron\dist\win-unpacked"
 set "RELEASE_DIR=%ROOT%\release"
 set "RELEASE_README=%RELEASE_DIR%\README.txt"
 set "VERSION=%~1"
 
 if not exist "%DIST_DIR%" (
     echo [ERROR] Dist directory not found: "%DIST_DIR%"
-    echo [HINT] Run scripts\build.bat first.
+    echo [HINT] Run scripts\build.bat first (Step 4: Electron build must complete).
     exit /b 1
 )
 
@@ -33,7 +33,6 @@ echo.
 echo [Recommended Environment]
 echo - Windows 10/11
 echo - Internet connection ^(required for auto chatlog fetch^)
-echo - WebView2 Runtime
 echo.
 echo [Troubleshooting]
 echo - If you see "Failed to fetch", close the app completely and run it again.
