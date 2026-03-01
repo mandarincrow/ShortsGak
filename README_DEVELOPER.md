@@ -151,5 +151,4 @@ Electron 실행 흐름:
 ## 참고 문서
 - API 계약: `API_CONTRACT.md`
 - 프로젝트 개요 & 알고리즘: `CHATLOG_ANALYZER_PLAN.md`
-- 작업 큐: `IMPLEMENTATION_TICKETS.md`
 - 사용자 문서: `README.md`
