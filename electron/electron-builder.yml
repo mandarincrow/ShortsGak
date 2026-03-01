@@ -16,6 +16,7 @@ extraResources:
       - "**/*"
 
 win:
+  icon: assets/icon.ico
   target:
     - target: dir
       arch:

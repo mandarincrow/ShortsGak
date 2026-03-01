@@ -4,11 +4,15 @@
  * Electron main process — manages backend.exe lifecycle and BrowserWindow.
  */
 
-const { app, BrowserWindow, dialog, Menu } = require('electron')
+const { app, BrowserWindow, dialog, Menu, shell } = require('electron')
 const { spawn } = require('child_process')
 const path = require('path')
 const readline = require('readline')
 const { findFreePort, parseListeningPort } = require('./utils')
+
+// Windows 작업표시줄 아이콘이 exe 아이콘과 일치하도록 AppUserModelId 설정
+// (app.whenReady() 이전에 호출해야 함)
+app.setAppUserModelId('com.mandarincrow.shortsgak')
 
 // ─────────────────────────────────────────────────────────────────
 // Constants
@@ -160,6 +164,7 @@ async function launchApp() {
   mainWindow = new BrowserWindow({
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,
+    icon: path.join(__dirname, 'assets', 'icon.ico'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -167,6 +172,23 @@ async function launchApp() {
   })
 
   mainWindow.loadURL(`http://127.0.0.1:${confirmedPort}`)
+
+  // 외부 URL(chzzk 등)은 시스템 기본 브라우저로 열기
+  const appOrigin = `http://127.0.0.1:${confirmedPort}`
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith(appOrigin)) {
+      event.preventDefault()
+      shell.openExternal(url)
+    }
+  })
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (!url.startsWith(appOrigin)) {
+      shell.openExternal(url)
+    }
+    return { action: 'deny' }
+  })
 
   mainWindow.on('closed', () => {
     mainWindow = null

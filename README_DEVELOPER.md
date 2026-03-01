@@ -56,7 +56,7 @@ scripts\build.bat
 1. **Frontend** — `npm run build` → `frontend/dist/`
 2. **Python 의존성** — `backend/requirements.txt` 설치
 3. **backend.exe** — `pyinstaller backend.spec` → `dist/backend/backend.exe`
-4. **Electron 앱** — `cd electron && npm install && npx electron-builder` → `electron/dist/win-unpacked/`
+4. **Electron 앱** — `cd electron && npm install && npx electron-builder` → `electron/dist/electron/win-unpacked/`
 5. **Release ZIP** — `package_release.bat` → `release/ShortsGak-win64-<DATE>.zip`
 
 산출물:
