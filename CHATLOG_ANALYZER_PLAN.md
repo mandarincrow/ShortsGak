@@ -14,18 +14,7 @@ Chzzk VOD의 채팅 로그에서 **편집 후보 구간(하이라이트)** 을 �
 
 ---
 
-## 2. 기술 스택
-
-| 계층 | 기술 |
-|------|------|
-| Backend | Python 3.12, FastAPI 0.115+, Pydantic v2, Uvicorn, Requests |
-| Frontend | React 18, TypeScript, Vite 5.4 (외부 차트 라이브러리 없음 – 자체 SVG) |
-| Desktop | PyWebView 5.3+, PyInstaller 6.19 (onedir) |
-| Build | `scripts/build.bat` (PowerShell 컬러 출력, 로그 분리) |
-
----
-
-## 3. 아키텍처
+## 2. 아키텍처
 
 ```
 [PyWebView 창]
@@ -46,9 +35,9 @@ Chzzk VOD의 채팅 로그에서 **편집 후보 구간(하이라이트)** 을 �
 
 ---
 
-## 4. 분석 알고리즘
+## 3. 분석 알고리즘
 
-### 4-1. 타임스탬프 처리
+### 3-1. 타임스탬프 처리
 
 채팅 로그는 Chzzk API의 `playerMessageTime` (VOD 재생 오프셋, ms) 기준으로 저장됩니다.
 
@@ -72,7 +61,7 @@ def _bucket_start(ts, bucket_size_seconds):
     return _VOD_RELATIVE_BASE + timedelta(seconds=bucket_offset)
 ```
 
-### 4-2. 스코어링
+### 3-2. 스코어링
 
 ```
 score[i] = 0.6 × volume_z[i]  +  0.4 × keyword_z[i]
@@ -80,13 +69,13 @@ score[i] = 0.6 × volume_z[i]  +  0.4 × keyword_z[i]
 
 z-score는 버킷 전체 벡터 기준. `score ≥ min_highlight_score` 인 버킷이 후보.
 
-### 4-3. 버킷 병합
+### 3-3. 버킷 병합
 
 - 인접 후보 버킷을 병합해 연속 구간으로 확장
 - `max_merge_buckets` (기본 2) 초과 시 병합 차단 → 새 독립 하이라이트로 분리
 - 스코어 내림차순 정렬 후 `max_highlights` 개 반환
 
-### 4-4. 키워드 정규화
+### 3-4. 키워드 정규화
 
 - `ㅋ`, `ㅎ`, `ㅠ`, `ㅜ` 2개 이상 반복 → 2개로 축약
 - `허어어억` 등 감탄사 변형 → `헉` 통합
@@ -94,7 +83,7 @@ z-score는 버킷 전체 벡터 기준. `score ≥ min_highlight_score` 인 버�
 
 ---
 
-## 5. UI / 차트 UX
+## 4. UI / 차트 UX
 
 `frontend/src/LineChart.tsx` — 외부 라이브러리 없이 SVG 직접 렌더링.
 
@@ -120,7 +109,7 @@ z-score는 버킷 전체 벡터 기준. `score ≥ min_highlight_score` 인 버�
 
 ---
 
-## 6. 색상 팔레트
+## 5. 색상 팔레트
 
 | CSS 변수 | 값 | 용도 |
 |----------|----|------|
@@ -135,7 +124,7 @@ z-score는 버킷 전체 벡터 기준. `score ≥ min_highlight_score` 인 버�
 
 ---
 
-## 7. 비범위 (현재 미구현)
+## 6. 비범위 (현재 미구현)
 
 - 실시간 라이브 스트림 분석
 - 자동 클립 생성
