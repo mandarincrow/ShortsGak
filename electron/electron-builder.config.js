@@ -14,7 +14,7 @@ module.exports = {
     output: "dist/electron",
   },
 
-  files: ["main.js", "utils.js", "package.json"],
+  files: ["main.js", "utils.js", "package.json", "assets/"],
 
   extraResources: [
     {
@@ -26,6 +26,7 @@ module.exports = {
 
   win: {
     target: [{ target: "dir", arch: ["x64"] }],
+    icon: "assets/icon.ico",
   },
 
   // Windows 코드 서명 완전 비활성화

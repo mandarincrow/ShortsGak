@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
-import { analyzeChatLog } from "./api";
+import { analyzeChatLog, getProgress } from "./api";
+import type { FetchProgress } from "./api";
 import { LineChart } from "./LineChart";
 import type { AnalyzeRequest, AnalyzeResponse } from "./types";
 
@@ -40,8 +41,10 @@ export function App() {
   const [bucketSize, setBucketSize] = useState(30);
   const [minScore, setMinScore] = useState(1.2);
   const [loading, setLoading] = useState(false);
+  const [fetchProgress, setFetchProgress] = useState<FetchProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [focusedPeakBucket, setFocusedPeakBucket] = useState<string | null>(null);
   const [chartWindowSize, setChartWindowSize] = useState<number | null>(null);
   const [chartPanCenter, setChartPanCenter] = useState<number | null>(null);
@@ -115,17 +118,27 @@ export function App() {
   const handleAnalyze = async () => {
     setLoading(true);
     setError(null);
+    setFetchProgress(null);
 
     const payload = buildCurrentAnalyzePayload();
+    const targetVodId = vodId.trim();
+
+    // 500ms 간격으로 수집 진행도 폴링 시작
+    progressIntervalRef.current = setInterval(async () => {
+      const p = await getProgress(targetVodId);
+      setFetchProgress(p);
+      if (p.done) {
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      }
+    }, 500);
 
     try {
       const analyzed = await analyzeChatLog(payload);
       setResult(analyzed);
       setFocusedPeakBucket(analyzed.highlights[0]?.peak_bucket ?? null);
 
-      const trimmedVodId = vodId.trim();
-      if (trimmedVodId) {
-        const nextRecentVodIds = [trimmedVodId, ...recentVodIds.filter((item) => item !== trimmedVodId)].slice(
+      if (targetVodId) {
+        const nextRecentVodIds = [targetVodId, ...recentVodIds.filter((item) => item !== targetVodId)].slice(
           0,
           MAX_RECENT_VOD_IDS
         );
@@ -137,6 +150,8 @@ export function App() {
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "알 수 없는 오류");
     } finally {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      setFetchProgress(null);
       setLoading(false);
     }
   };
@@ -237,6 +252,24 @@ export function App() {
         <button onClick={handleAnalyze} disabled={loading}>
           {loading ? "분석 중..." : "분석 실행"}
         </button>
+
+        {loading && fetchProgress && !fetchProgress.done && fetchProgress.pages > 0 ? (
+          <div className="fetch-progress">
+            <div className="fetch-progress-label">
+              채팅 수집 중&nbsp;
+              <span className="fetch-progress-count">{fetchProgress.pages} 페이지</span>
+              &nbsp;/&nbsp;
+              <span className="fetch-progress-count">{fetchProgress.messages.toLocaleString()} 건</span>
+            </div>
+            <div className="fetch-progress-bar">
+              <div className="fetch-progress-bar-inner" />
+            </div>
+          </div>
+        ) : loading ? (
+          <div className="fetch-progress">
+            <div className="fetch-progress-label">분석 처리 중...</div>
+          </div>
+        ) : null}
 
         {error ? <p className="error">오류: {error}</p> : null}
       </section>

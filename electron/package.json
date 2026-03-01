@@ -1,5 +1,6 @@
 {
   "name": "shortsgak",
+  "productName": "ShortsGak",
   "version": "1.0.0",
   "description": "ShortsGak - 치지직 VOD 채팅 하이라이트 분석기",
   "main": "main.js",

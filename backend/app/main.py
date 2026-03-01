@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .analyzer import build_analysis
+from .chatlog_fetcher import get_progress
 from .logging_config import configure_logging, get_logger
 from .parser import parse_chat_logs
 from .schemas import AnalyzeRequest, AnalyzeResponse, ExportRequest
@@ -72,6 +73,13 @@ async def request_logging_middleware(request: Request, call_next):
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/progress/{vod_id}")
+def progress(vod_id: str) -> dict:
+    """채팅 수집 진행도를 반환한다. 수집 중이 아니면 done=True."""
+    p = get_progress(vod_id)
+    return {"pages": p["pages"], "messages": p["messages"], "done": p["done"]}
 
 
 if (FRONTEND_DIST_DIR / "assets").exists():

@@ -125,7 +125,7 @@ if errorlevel 1 ( echo [ERROR] electron npm install failed & cd "%ROOT%" & exit 
 :: 코드 서명 인증서 없이 빌드 — winCodeSign 다운로드/symlink 권한 오류 방지
 set CSC_IDENTITY_AUTO_DISCOVERY=false
 set WIN_CSC_LINK=
-call npx electron-builder
+call npx electron-builder --config electron-builder.config.js
 if errorlevel 1 ( echo [ERROR] electron-builder failed & cd "%ROOT%" & exit /b 1 )
 
 cd "%ROOT%"

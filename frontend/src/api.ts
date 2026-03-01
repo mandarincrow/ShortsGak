@@ -21,6 +21,18 @@ export async function analyzeChatLog(payload: AnalyzeRequest): Promise<AnalyzeRe
   return response.json() as Promise<AnalyzeResponse>;
 }
 
+export interface FetchProgress {
+  pages: number;
+  messages: number;
+  done: boolean;
+}
+
+export async function getProgress(vodId: string): Promise<FetchProgress> {
+  const response = await fetch(`${BASE_URL}/api/progress/${encodeURIComponent(vodId)}`);
+  if (!response.ok) return { pages: 0, messages: 0, done: true };
+  return response.json() as Promise<FetchProgress>;
+}
+
 export async function exportAnalysisFile(payload: {
   analysis: AnalyzeRequest;
   format: "json" | "csv";

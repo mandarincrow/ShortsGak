@@ -4,6 +4,7 @@ import json
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import TypedDict
 
 import requests
 
@@ -17,6 +18,21 @@ REQUEST_TIMEOUT_SECONDS = 10
 _MIN_PAGE_DELAY = 0.05        # 초, 정상 응답 시 최소 대기 (기존 0.2s의 1/4)
 _RATE_LIMIT_BASE_DELAY = 1.0   # 초, 429 첫 번째 재시도
 _RATE_LIMIT_MAX_RETRIES = 5    # 최대 재시도 횟수
+
+
+class FetchProgress(TypedDict):
+    pages: int
+    messages: int
+    done: bool
+
+
+# vod_id → 현재 수집 진행도. analyze 엔드포인트가 실행되는 동안 갱신된다.
+_progress: dict[str, FetchProgress] = {}
+
+
+def get_progress(vod_id: str) -> FetchProgress:
+    """현재 수집 진행도를 반환한다. 수집 중이 아니면 done=True로 반환."""
+    return _progress.get(vod_id, FetchProgress(pages=0, messages=0, done=True))
 
 
 def _get_page(session: requests.Session, url: str, headers: dict) -> requests.Response:
@@ -59,60 +75,68 @@ def fetch_chatlog_to_file(vod_id: str, destination: Path) -> tuple[int, int]:
     destination.parent.mkdir(parents=True, exist_ok=True)
     logger.info("Start fetching chat log: vod_id=%s -> %s", vod_id, destination)
 
-    with requests.Session() as session, destination.open("w", encoding="utf-8") as file:
-        while True:
-            url = (
-                f"https://api.chzzk.naver.com/service/v1/videos/{vod_id}/chats"
-                f"?playerMessageTime={next_player_message_time}"
-            )
-            response = _get_page(session, url, headers)
-            data = response.json()
-            page_count += 1
+    _progress[vod_id] = FetchProgress(pages=0, messages=0, done=False)
+    try:
+        with requests.Session() as session, destination.open("w", encoding="utf-8") as file:
+            while True:
+                url = (
+                    f"https://api.chzzk.naver.com/service/v1/videos/{vod_id}/chats"
+                    f"?playerMessageTime={next_player_message_time}"
+                )
+                response = _get_page(session, url, headers)
+                data = response.json()
+                page_count += 1
 
-            if data.get("code") != 200:
-                logger.warning("Unexpected chzzk response code: vod_id=%s code=%s", vod_id, data.get("code"))
-                break
+                if data.get("code") != 200:
+                    logger.warning("Unexpected chzzk response code: vod_id=%s code=%s", vod_id, data.get("code"))
+                    break
 
-            content = data.get("content", {})
-            video_chats = content.get("videoChats") or []
-            if not video_chats:
-                logger.info("No more chats from API: vod_id=%s page=%s", vod_id, page_count)
-                break
+                content = data.get("content", {})
+                video_chats = content.get("videoChats") or []
+                if not video_chats:
+                    logger.info("No more chats from API: vod_id=%s page=%s", vod_id, page_count)
+                    break
 
-            log_messages: list[str] = []
-            for chat in video_chats:
-                player_message_time = chat.get("playerMessageTime")
-                user_id_hash = chat.get("userIdHash", "")
-                message = chat.get("content", "")
-                if player_message_time is None:
-                    message_time = chat.get("messageTime")
-                    if message_time is None:
-                        continue
-                    vod_time = datetime.fromtimestamp(message_time / 1000.0, KST).replace(tzinfo=None)
-                else:
-                    vod_time = datetime.utcfromtimestamp(player_message_time / 1000.0)
-                formatted_time = vod_time.strftime("%Y-%m-%d %H:%M:%S")
+                log_messages: list[str] = []
+                for chat in video_chats:
+                    player_message_time = chat.get("playerMessageTime")
+                    user_id_hash = chat.get("userIdHash", "")
+                    message = chat.get("content", "")
+                    if player_message_time is None:
+                        message_time = chat.get("messageTime")
+                        if message_time is None:
+                            continue
+                        vod_time = datetime.fromtimestamp(message_time / 1000.0, KST).replace(tzinfo=None)
+                    else:
+                        vod_time = datetime.utcfromtimestamp(player_message_time / 1000.0)
+                    formatted_time = vod_time.strftime("%Y-%m-%d %H:%M:%S")
 
-                nickname = "Unknown"
-                profile_raw = chat.get("profile")
-                if profile_raw and profile_raw != "null":
-                    try:
-                        profile = json.loads(profile_raw)
-                        nickname = profile.get("nickname", "Unknown")
-                    except json.JSONDecodeError:
-                        nickname = "Unknown"
+                    nickname = "Unknown"
+                    profile_raw = chat.get("profile")
+                    if profile_raw and profile_raw != "null":
+                        try:
+                            profile = json.loads(profile_raw)
+                            nickname = profile.get("nickname", "Unknown")
+                        except json.JSONDecodeError:
+                            nickname = "Unknown"
 
-                log_messages.append(f"[{formatted_time}] {nickname}: {message} ({user_id_hash})\n")
+                    log_messages.append(f"[{formatted_time}] {nickname}: {message} ({user_id_hash})\n")
 
-            file.writelines(log_messages)
-            written_count += len(log_messages)
+                file.writelines(log_messages)
+                written_count += len(log_messages)
 
-            next_player_message_time = content.get("nextPlayerMessageTime")
-            if next_player_message_time is None:
-                logger.info("Reached last chat page: vod_id=%s page=%s", vod_id, page_count)
-                break
-            # 정상 응답 시 최소 딜레이 — 기존 0.2s 대비 1/4, 429 시 _get_page 내부에서 back-off
-            time.sleep(_MIN_PAGE_DELAY)
+                # 페이지 수집 완료 후 진행도 갱신
+                _progress[vod_id] = FetchProgress(pages=page_count, messages=written_count, done=False)
+
+                next_player_message_time = content.get("nextPlayerMessageTime")
+                if next_player_message_time is None:
+                    logger.info("Reached last chat page: vod_id=%s page=%s", vod_id, page_count)
+                    break
+                # 정상 응답 시 최소 딜레이 — 기존 0.2s 대비 1/4, 429 시 _get_page 내부에서 back-off
+                time.sleep(_MIN_PAGE_DELAY)
+
+    finally:
+        _progress[vod_id] = FetchProgress(pages=page_count, messages=written_count, done=True)
 
     logger.info(
         "Finished fetching chat log: vod_id=%s pages=%s messages=%s path=%s",
