@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
 import socket
 import sys
 import threading
 import time
+import traceback
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -69,6 +71,7 @@ def start_server_thread(port: int) -> threading.Thread:
         host=SERVER_HOST,
         port=port,
         log_level="error",
+        log_config=None,  # console=False 빌드에서 sys.stderr=None → isatty() crash 방지
     )
     server = uvicorn.Server(config)
 
@@ -112,6 +115,15 @@ def _can_use_webview() -> bool:
         return False
 
 
+def _show_error(title: str, message: str) -> None:
+    """플랫폼에 맞게 에러 메시지를 표시합니다."""
+    if sys.platform == "win32":
+        import ctypes  # noqa: PLC0415
+        ctypes.windll.user32.MessageBoxW(0, message, title, 0x00000010)  # MB_ICONERROR
+    else:
+        print(f"[{title}] {message}", file=sys.stderr)
+
+
 def _run_in_browser_fallback(base_url: str) -> None:
     """WebView2 없는 환경에서 기본 브라우저로 앱을 열고 tkinter로 서버를 유지합니다."""
     import tkinter as tk  # noqa: PLC0415
@@ -119,7 +131,13 @@ def _run_in_browser_fallback(base_url: str) -> None:
 
     webbrowser.open(base_url)
 
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except Exception:
+        # 헤드리스 환경(디스플레이 없음) 등 tkinter 초기화 실패 시 서버만 유지
+        threading.Event().wait()
+        return
+
     root.title("ShortsGak")
     root.resizable(False, False)
 
@@ -146,7 +164,16 @@ def main() -> None:
     base_url = f"http://{SERVER_HOST}:{port}"
 
     start_server_thread(port)
-    wait_until_server_ready(base_url, SERVER_START_TIMEOUT_SECONDS)
+    try:
+        wait_until_server_ready(base_url, SERVER_START_TIMEOUT_SECONDS)
+    except TimeoutError:
+        _show_error(
+            "ShortsGak – 시작 실패",
+            "내부 서버가 응답하지 않습니다.\n"
+            "로그 파일을 확인해 주세요:\n"
+            f"{Path(sys.executable).parent / 'logs' / 'app.log' if hasattr(sys, '_MEIPASS') else BASE_DIR / 'backend' / 'logs' / 'app.log'}",
+        )
+        sys.exit(1)
 
     if _can_use_webview():
         import webview  # noqa: PLC0415 – 플랫폼 구분 시 지연 import 허용
@@ -165,9 +192,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    import os
-    import traceback
-
     try:
         main()
     except Exception:
@@ -186,4 +210,9 @@ if __name__ == "__main__":
         crash_log = crash_log_dir / "crash.log"
         with open(crash_log, "w", encoding="utf-8") as f:
             traceback.print_exc(file=f)
-        raise
+
+        _show_error(
+            "ShortsGak – 오류",
+            f"예기치 않은 오류가 발생했습니다.\n로그 파일을 확인해 주세요:\n{crash_log}",
+        )
+        sys.exit(1)
