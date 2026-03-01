@@ -143,3 +143,4 @@ Electron main process → `backend.exe --port {N}` spawn → health poll → `Br
 3. **빌드 검증** — 코드 수정 후 `npm run build` (프론트) 또는 `scripts/build.bat` (전체) 확인 필수
 4. **타임스탬프** — `playerMessageTime` 기준 유지. `messageTime` 벽시계 기준 로직 추가 금지
 5. **한국어 파일 쓰기** — PowerShell `Set-Content` 인코딩 이슈 → `python Path.write_text(encoding='utf-8')` 사용
+6. **TDD 기반 개발** — 구현 전 테스트 먼저 작성 (pytest). Red → Green 사이클을 통과한 뒤 PR 오픈. 테스트 위치: `tests/` (백엔드), `electron/tests/` (Electron)
