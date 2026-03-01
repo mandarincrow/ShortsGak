@@ -4,7 +4,7 @@
  * Electron main process — manages backend.exe lifecycle and BrowserWindow.
  */
 
-const { app, BrowserWindow, dialog } = require('electron')
+const { app, BrowserWindow, dialog, Menu } = require('electron')
 const { spawn } = require('child_process')
 const path = require('path')
 const readline = require('readline')
@@ -155,6 +155,8 @@ async function launchApp() {
   }
 
   // Server ready — open window
+  Menu.setApplicationMenu(null)
+
   mainWindow = new BrowserWindow({
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,
