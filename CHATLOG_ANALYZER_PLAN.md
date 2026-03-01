@@ -17,10 +17,10 @@ Chzzk VOD의 채팅 로그에서 **편집 후보 구간(하이라이트)** 을 �
 ## 2. 아키텍처
 
 ```
-[PyWebView 창]
+[Electron BrowserWindow]
     │  same-origin HTTP
     ▼
-[FastAPI (uvicorn, 동적 포트, 백그라운드 스레드)]
+[FastAPI (uvicorn, 동적 포트, backend.exe 내장)]
     │
     ├─ GET  /health
     └─ POST /api/analyze
@@ -129,4 +129,4 @@ z-score는 버킷 전체 벡터 기준. `score ≥ min_highlight_score` 인 버�
 - 실시간 라이브 스트림 분석
 - 자동 클립 생성
 - 분석 결과 영속 저장 (DB)
-- 파일 다운로드 — PyWebView 환경에서 동작 불가 확인됨, UI에서 제거됨
+- 파일 다운로드

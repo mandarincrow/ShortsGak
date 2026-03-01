@@ -15,7 +15,12 @@ echo
 # ─────────────────────────────────────────────
 # 1. 프론트엔드 빌드
 # ─────────────────────────────────────────────
-echo "[1/4] 프론트엔드 빌드 중..."
+echo "[clean] 이전 빌드 아티팩트 정리 중..."
+rm -rf "$ROOT/dist/backend" "$ROOT/build/backend" "$ROOT/electron/dist"
+echo "[clean] 완료"
+echo
+
+echo "[1/5] 프론트엔드 빌드 중..."
 if ! command -v npm &>/dev/null; then
     echo "[ERROR] npm 을 찾을 수 없습니다. Node.js 를 설치하세요."
     exit 1
@@ -31,7 +36,7 @@ echo
 # ─────────────────────────────────────────────
 # 2. Python 가상환경 준비
 # ─────────────────────────────────────────────
-echo "[2/4] Python 가상환경 준비 중..."
+echo "[2/5] Python 가상환경 준비 중..."
 
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
@@ -41,27 +46,44 @@ fi
 source .venv/bin/activate
 
 pip install -U pip --quiet
-pip install -r backend/requirements.txt -r desktop_launcher/requirements.txt --quiet
+pip install -r backend/requirements.txt --quiet
 echo "[OK] 가상환경 및 의존성 준비 완료"
 echo
 
 # ─────────────────────────────────────────────
-# 3. PyInstaller 설치 및 빌드
+# 3. PyInstaller 빌드
 # ─────────────────────────────────────────────
-echo "[3/4] PyInstaller 빌드 중..."
+echo "[3/5] PyInstaller 빌드 중..."
 pip install pyinstaller --quiet
-pyinstaller ShortsGak.spec --clean --noconfirm
-echo "[OK] 빌드 성공"
+pyinstaller backend.spec --clean --noconfirm
+echo "[OK] backend.exe 빌드 성공"
 echo
 
 # ─────────────────────────────────────────────
-# 4. 결과 요약
+# 4. Electron 빌드
 # ─────────────────────────────────────────────
-echo "[4/4] 빌드 결과"
+echo "[4/5] Electron 빌드 중..."
+if ! command -v npm &>/dev/null; then
+    echo "[ERROR] npm 을 찾을 수 없습니다. Node.js 를 설치하세요."
+    exit 1
+fi
+
+cd electron
+npm install
+# 코드사이닝 인증서 없이 빌드 -- winCodeSign symlink 오류 방지
+export CSC_IDENTITY_AUTO_DISCOVERY=false
+npx electron-builder
+cd "$ROOT"
+echo "[OK] Electron 빌드 성공"
+echo
+
+# ─────────────────────────────────────────────
+# 5. 결과 요약
+# ─────────────────────────────────────────────
+echo "[5/5] 빌드 결과"
 echo "----------------------------------------"
-echo "  실행 파일: $ROOT/dist/ShortsGak/ShortsGak"
-echo "  배포 폴더: $ROOT/dist/ShortsGak/"
+echo "  backend.exe : $ROOT/dist/backend/backend.exe"
+echo "  Electron 앱 : $ROOT/electron/dist/win-unpacked/ (Windows 빌드 시)"
 echo "----------------------------------------"
-echo "  Linux/macOS에서 pywebview GUI 확인 시 GTK 또는 Qt 런타임이 필요합니다."
-echo "  Windows exe 배포는 Windows 환경에서 build.bat 을 사용하세요."
+echo "  NOTE: Windows exe 배포는 Windows 환경에서 build.bat 을 사용하세요."
 echo "============================================================"

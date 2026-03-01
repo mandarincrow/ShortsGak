@@ -168,6 +168,7 @@ export function LineChart({
   const handleMinimapPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!minimapRef.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
+    document.body.style.userSelect = 'none';
     const rect = minimapRef.current.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
     const newCenter = Math.round(ratio * (points.length - 1));
@@ -185,6 +186,7 @@ export function LineChart({
 
   const handleMinimapPointerUp = () => {
     dragRef.current = null;
+    document.body.style.userSelect = '';
   };
 
   // ── Derived render values ─────────────────────────────────────────────────

@@ -1,41 +1,46 @@
 # -*- mode: python ; coding: utf-8 -*-
 #
-# ShortsGak.spec
-# PyInstaller 빌드 명세 파일
+# backend.spec
+# PyInstaller 빌드 명세 — headless FastAPI 서버 전용
 #
 # 빌드 방법:
 #   pip install pyinstaller
-#   pyinstaller ShortsGak.spec
+#   pyinstaller backend.spec --clean --noconfirm
 #
-# 출력: dist/ShortsGak/ 폴더 → ShortsGak.exe 포함
+# 출력: dist/backend/ 폴더 → backend.exe 포함
 #
-# 주의사항:
-# - 빌드 전에 반드시 프론트엔드를 먼저 빌드해 frontend/dist/를 생성해야 합니다.
-#   (cd frontend && npm run build)
-# - Windows 타깃 배포 시 WebView2 런타임 설치 필요
-#   (Microsoft Edge WebView2 Runtime)
+# 전제 조건:
+#   - 프론트엔드를 먼저 빌드해 frontend/dist/ 를 생성해야 합니다.
+#     (cd frontend && npm run build)
+#   - 기존 ShortsGak.spec(pywebview 포함)과는 다른 파일입니다.
+#     Electron이 backend.exe 를 자식 프로세스로 실행합니다.
+#
+# 주요 차이점 (vs ShortsGak.spec):
+#   - entry point : backend/backend_server.py  (desktop_launcher/run_desktop.py 아님)
+#   - console=True : GUI 없음, Electron 이 창을 담당
+#   - pywebview / clr / clr_loader / tkinter 완전 제거 → 시스템 의존성 없음
+#   - 출력 이름 : backend  (→ dist/backend/backend.exe)
 
 from pathlib import Path
-
-block_cipher = None
 
 # ---------------------------------------------------------------------------
 # 리소스 경로 정의
 # ---------------------------------------------------------------------------
-ROOT = Path(SPECPATH)  # ShortsGak.spec이 위치한 프로젝트 루트
+ROOT = Path(SPECPATH)  # backend.spec 이 위치한 프로젝트 루트
 
-# 번들에 포함할 데이터 (src, dest_inside_bundle)
 added_datas = [
-    # 프론트엔드 정적 파일: frontend/dist/** → _MEIPASS/frontend/dist/
+    # 프론트엔드 정적 파일: FastAPI 가 직접 서빙
     (str(ROOT / "frontend" / "dist"), "frontend/dist"),
-    # 백엔드 패키지: backend/app/ → _MEIPASS/backend/app/
-    # run_desktop.py가 _MEIPASS/backend 를 sys.path에 추가하므로
+    # 백엔드 패키지: _MEIPASS/backend/app/ 에 배치
+    # backend_server.py 가 _MEIPASS/backend 를 sys.path 에 추가하므로
     # `import app.main` 이 동작합니다
     (str(ROOT / "backend" / "app"), "backend/app"),
 ]
 
 # ---------------------------------------------------------------------------
-# uvicorn 및 fastapi의 동적 로더는 PyInstaller가 자동 탐지하지 못하는 경우가 있음
+# Hidden imports
+# uvicorn / fastapi 의 동적 로더는 PyInstaller 가 자동 탐지하지 못하는 경우가 있음
+# pywebview · clr · tkinter 는 Electron 전환으로 완전 제거
 # ---------------------------------------------------------------------------
 hidden_imports = [
     # uvicorn internals
@@ -69,26 +74,13 @@ hidden_imports = [
     "app.logging_config",
     "app.chatlog_cache",
     "app.chatlog_fetcher",
-    # pywebview
-    "webview",
-    "webview.platforms.winforms",        # Windows WinForms wrapper (pythonnet)
-    "webview.platforms.edgechromium",    # Windows WebView2 (기본 백엔드)
-    "webview.platforms.gtk",             # Linux GTK
-    "webview.platforms.qt",              # Linux Qt
-    # pythonnet / CLR (webview.platforms.winforms 의존)
-    "clr",
-    "clr_loader",
-    # tkinter – WebView2 없는 환경에서 브라우저 fallback 창으로 사용
-    "tkinter",
-    "tkinter.font",
-    "tkinter.ttk",
 ]
 
 # ---------------------------------------------------------------------------
 # Analysis
 # ---------------------------------------------------------------------------
 a = Analysis(
-    [str(ROOT / "desktop_launcher" / "run_desktop.py")],
+    [str(ROOT / "backend" / "backend_server.py")],
     pathex=[
         str(ROOT),
         str(ROOT / "backend"),  # PyInstaller 빌드 시 `app` 패키지 탐색 경로
@@ -99,27 +91,29 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["matplotlib", "numpy", "scipy"],  # tkinter는 WebView2 fallback에서 사용
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
+    excludes=[
+        "matplotlib", "numpy", "scipy",
+        # GUI / WebView 관련 — Electron 전환으로 불필요
+        "webview", "clr", "clr_loader",
+        "tkinter", "tkinter.font", "tkinter.ttk",
+    ],
     noarchive=False,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data)
 
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
-    name="ShortsGak",
+    name="backend",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,   # Windows에서 터미널 창 숨김
-    icon=None,       # TODO: icon을 추가하려면 ico 파일 경로 지정
+    console=True,   # headless 서버 — 터미널 출력 필요 (LISTENING_PORT= 등)
+    icon=None,
 )
 
 coll = COLLECT(
@@ -130,5 +124,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name="ShortsGak",
+    name="backend",  # 출력: dist/backend/
 )
