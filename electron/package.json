@@ -1,0 +1,15 @@
+{
+  "name": "shortsgak",
+  "version": "1.0.0",
+  "description": "ShortsGak - 치지직 VOD 채팅 하이라이트 분석기",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node tests/utils.test.js",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^25.0.0"
+  }
+}
