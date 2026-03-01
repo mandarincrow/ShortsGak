@@ -21,7 +21,6 @@ htmlcov/
 .venv/
 venv/
 backend/.venv/
-desktop_launcher/.venv/
 
 # Build artifacts (Python / PyInstaller)
 build/
