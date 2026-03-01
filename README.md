@@ -11,6 +11,11 @@ ShortsGak은 치지직 VOD 채팅 로그를 분석해 하이라이트 후보 구
 ## 사용 대상
 - 방송 하이라이트 구간을 빠르게 찾고 싶은 편집자/운영자
 
+## 실행 환경
+- Windows 10/11
+- 인터넷 연결 (채팅 로그 자동 수집용)
+- 별도 런타임 설치 불필요 (Chromium·Python 런타임 내장, ~250 MB)
+
 ## 실행 방법 (일반 사용자)
 1. `ShortsGak.exe`를 실행합니다.
 2. VOD ID를 입력합니다.
@@ -33,7 +38,7 @@ ShortsGak은 치지직 VOD 채팅 로그를 분석해 하이라이트 후보 구
 - 인터넷 연결 상태를 확인해 주세요.
 
 ## 로그 파일 위치
-- 실행파일 로그: `ShortsGak/_internal/backend/logs/app.log`
+- 실행파일 로그: `ShortsGak/resources/backend/logs/app.log`
 
 로그 내용을 전달해 주시면 원인 파악을 빠르게 도와드릴 수 있습니다.
 
