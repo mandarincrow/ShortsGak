@@ -13,7 +13,38 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 KST = timezone(timedelta(hours=9))
 REQUEST_TIMEOUT_SECONDS = 10
-PAGE_REQUEST_DELAY_SECONDS = 0.2
+# 레이트 리밋(429) 발생 시에만 back-off. 정상 응답 시 최소 딜레이만 적용.
+_MIN_PAGE_DELAY = 0.05        # 초, 정상 응답 시 최소 대기 (기존 0.2s의 1/4)
+_RATE_LIMIT_BASE_DELAY = 1.0   # 초, 429 첫 번째 재시도
+_RATE_LIMIT_MAX_RETRIES = 5    # 최대 재시도 횟수
+
+
+def _get_page(session: requests.Session, url: str, headers: dict) -> requests.Response:
+    """단일 페이지 요청. 429/타임아웃 시 exponential back-off 후 재시도."""
+    for attempt in range(_RATE_LIMIT_MAX_RETRIES + 1):
+        try:
+            response = session.get(url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
+        except requests.exceptions.Timeout:
+            if attempt >= _RATE_LIMIT_MAX_RETRIES:
+                raise
+            delay = _RATE_LIMIT_BASE_DELAY * (2 ** attempt)
+            logger.warning(
+                "Request timeout: url=%s attempt=%s/%s, retrying in %.1fs",
+                url, attempt + 1, _RATE_LIMIT_MAX_RETRIES, delay,
+            )
+            time.sleep(delay)
+            continue
+        if response.status_code == 429:
+            delay = _RATE_LIMIT_BASE_DELAY * (2 ** attempt)
+            logger.warning(
+                "Rate limited (429): url=%s attempt=%s/%s, retrying in %.1fs",
+                url, attempt + 1, _RATE_LIMIT_MAX_RETRIES, delay,
+            )
+            time.sleep(delay)
+            continue
+        response.raise_for_status()
+        return response
+    raise requests.exceptions.RetryError(f"Max retries exceeded: {url}")
 
 
 def fetch_chatlog_to_file(vod_id: str, destination: Path) -> tuple[int, int]:
@@ -34,8 +65,7 @@ def fetch_chatlog_to_file(vod_id: str, destination: Path) -> tuple[int, int]:
                 f"https://api.chzzk.naver.com/service/v1/videos/{vod_id}/chats"
                 f"?playerMessageTime={next_player_message_time}"
             )
-            response = session.get(url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
-            response.raise_for_status()
+            response = _get_page(session, url, headers)
             data = response.json()
             page_count += 1
 
@@ -54,16 +84,12 @@ def fetch_chatlog_to_file(vod_id: str, destination: Path) -> tuple[int, int]:
                 player_message_time = chat.get("playerMessageTime")
                 user_id_hash = chat.get("userIdHash", "")
                 message = chat.get("content", "")
-                # playerMessageTime: VOD 재생 위치 (ms). messageTime 은 벽시계 시각이므로
-                # playerMessageTime 을 기준으로 저장해야 VOD 링크 offset 이 정확합니다.
                 if player_message_time is None:
-                    # fallback: messageTime 벽시계 KST 사용 (레거시)
                     message_time = chat.get("messageTime")
                     if message_time is None:
                         continue
                     vod_time = datetime.fromtimestamp(message_time / 1000.0, KST).replace(tzinfo=None)
                 else:
-                    # epoch-relative UTC datetime (year=1970) = VOD 재생 오프셋
                     vod_time = datetime.utcfromtimestamp(player_message_time / 1000.0)
                 formatted_time = vod_time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -85,8 +111,8 @@ def fetch_chatlog_to_file(vod_id: str, destination: Path) -> tuple[int, int]:
             if next_player_message_time is None:
                 logger.info("Reached last chat page: vod_id=%s page=%s", vod_id, page_count)
                 break
-
-            time.sleep(PAGE_REQUEST_DELAY_SECONDS)
+            # 정상 응답 시 최소 딜레이 — 기존 0.2s 대비 1/4, 429 시 _get_page 내부에서 back-off
+            time.sleep(_MIN_PAGE_DELAY)
 
     logger.info(
         "Finished fetching chat log: vod_id=%s pages=%s messages=%s path=%s",

@@ -33,7 +33,7 @@ Types:
 - fix: bug fix
 - docs: documentation changes only
 - style: formatting, missing semicolons, etc (no logic change)
-- refactor: code change that is not a fix or feature
+- refactor: code change that is not a fix or feature or performance improvement
 - perf: performance improvement
 - test: adding or updating tests
 - chore: build process, dependency updates, config changes
