@@ -37,7 +37,7 @@ echo.
 echo [Troubleshooting]
 echo - If you see "Failed to fetch", close the app completely and run it again.
 echo - If the issue continues, check this log file:
-echo   ShortsGak\_internal\backend\logs\app.log
+echo   ShortsGak\resources\backend\logs\app.log
 echo.
 echo [Project]
 echo https://github.com/mandarincrow/ShortsGak
@@ -45,14 +45,28 @@ echo https://github.com/mandarincrow/ShortsGak
 
 set "ZIP_NAME=ShortsGak-win64-%VERSION%.zip"
 set "ZIP_PATH=%RELEASE_DIR%\%ZIP_NAME%"
+set "STAGING_DIR=%TEMP%\shortsgak_staging_%RANDOM%"
+set "STAGING_APP=%STAGING_DIR%\ShortsGak"
 
 if exist "%ZIP_PATH%" del /f /q "%ZIP_PATH%" >nul 2>&1
 
-powershell -NoProfile -Command "Compress-Archive -Path '%DIST_DIR%','%RELEASE_README%' -DestinationPath '%ZIP_PATH%' -Force"
+:: Copy win-unpacked into a ShortsGak-named staging folder so the zip root is ShortsGak\
+powershell -NoProfile -Command ^
+  "Copy-Item -Path '%DIST_DIR%' -Destination '%STAGING_APP%' -Recurse -Force"
 if errorlevel 1 (
+    echo [ERROR] Failed to stage release directory.
+    exit /b 1
+)
+
+powershell -NoProfile -Command ^
+  "Compress-Archive -Path '%STAGING_APP%','%RELEASE_README%' -DestinationPath '%ZIP_PATH%' -Force"
+if errorlevel 1 (
+    powershell -NoProfile -Command "Remove-Item '%STAGING_DIR%' -Recurse -Force -ErrorAction SilentlyContinue"
     echo [ERROR] Failed to create release zip.
     exit /b 1
 )
+
+powershell -NoProfile -Command "Remove-Item '%STAGING_DIR%' -Recurse -Force -ErrorAction SilentlyContinue"
 
 echo [OK] Release zip created: "%ZIP_PATH%"
 exit /b 0
