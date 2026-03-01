@@ -47,8 +47,8 @@ ShortsGak-win64-<DATE>/
 | T02 | `backend.spec` + pytest | #9 | 머지됨 |
 | T03 | `electron/` 앱 신규 작성 | #10 | 머지됨 |
 | T04 | 빌드 스크립트 수정 | #11 | 머지됨 |
-| T05 | `desktop_launcher/` 제거 | #12 | 리뷰 대기 |
-| T06 | README 갱신 | #13 | 리뷰 대기 |
+| T05 | `desktop_launcher/` 제거 | #12 | 머지됨 |
+| T06 | README 갱신 | #13 | 머지됨 |
 
 ---
 
@@ -91,12 +91,12 @@ ShortsGak-win64-<DATE>/
     → zip 내부 구조: `ShortsGak\ShortsGak.exe` (기존과 동일)
   - README.txt 로그 경로: `ShortsGak\resources\backend\logs\app.log`
 
-### T05: `desktop_launcher/` 제거 -- PR #12 (리뷰 대기)
+| T05: `desktop_launcher/` 제거 -- PR #12 (머지됨) |
 - 삭제: `desktop_launcher/run_desktop.py`, `requirements.txt`, `README.md`
 - `ShortsGak.spec` → `ShortsGak.spec.bak` 으로 아카이브
 - `.gitignore`: `desktop_launcher/.venv/` 항목 제거
 
-### T06: README 갱신 -- PR #13 (리뷰 대기)
+### T06: README 갱신 -- PR #13 (머지됨)
 - `README.md`: 실행 환경 섹션 추가 (런타임 설치 불필요, ~250 MB), 로그 경로 갱신
 - `README_DEVELOPER.md`: Electron 빌드 절차 5단계 반영, pywebview/WebView2 항목 전부 제거, Known Issues에 CLR crash 해결 항목 추가
 
@@ -111,8 +111,7 @@ backend/
     main.py             <- FastAPI 앱 (GET /, GET /assets/*, POST /api/analyze 등)
     ...
 backend.spec            <- T02 (headless PyInstaller, dist/backend/ 출력)
-ShortsGak.spec.bak      <- T05에서 아카이브됨 (PR #12 머지 후 반영)
-desktop_launcher/       <- base 브랜치에 존재 (PR #12 머지 대기 중)
+ShortsGak.spec.bak      <- T05에서 아카이브됨 (PR #12 머지됨)
 electron/
   .gitignore
   main.js               <- T03 Electron main process
