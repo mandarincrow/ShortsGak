@@ -15,6 +15,11 @@ echo
 # ─────────────────────────────────────────────
 # 1. 프론트엔드 빌드
 # ─────────────────────────────────────────────
+echo "[clean] 이전 빌드 아티팩트 정리 중..."
+rm -rf "$ROOT/dist/backend" "$ROOT/build/backend" "$ROOT/electron/dist"
+echo "[clean] 완료"
+echo
+
 echo "[1/5] 프론트엔드 빌드 중..."
 if ! command -v npm &>/dev/null; then
     echo "[ERROR] npm 을 찾을 수 없습니다. Node.js 를 설치하세요."
@@ -65,6 +70,8 @@ fi
 
 cd electron
 npm install
+# 코드사이닝 인증서 없이 빌드 -- winCodeSign symlink 오류 방지
+export CSC_IDENTITY_AUTO_DISCOVERY=false
 npx electron-builder
 cd "$ROOT"
 echo "[OK] Electron 빌드 성공"

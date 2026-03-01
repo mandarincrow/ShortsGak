@@ -60,7 +60,7 @@ scripts\build.bat
 5. **Release ZIP** — `package_release.bat` → `release/ShortsGak-win64-<DATE>.zip`
 
 산출물:
-- `electron/dist/win-unpacked/ShortsGak.exe`
+- `electron/dist/electron/win-unpacked/ShortsGak.exe`
 
 ## Release ZIP 패키징
 
@@ -120,7 +120,7 @@ Electron 실행 흐름:
 ## 릴리즈 전 체크리스트
 
 - [ ] `scripts/build.bat` exit code 0
-- [ ] `electron/dist/win-unpacked/ShortsGak.exe` 더블클릭 기동 확인
+- [ ] `electron/dist/electron/win-unpacked/ShortsGak.exe` 더블클릭 기동 확인
 - [ ] VOD 분석 1회 성공 (하이라이트 ≥ 1개)
 - [ ] `release/ShortsGak-win64-<version>.zip` 생성 확인
 - [ ] `ShortsGak/resources/backend/logs/app.log` 에 치명 예외 없음
@@ -128,7 +128,7 @@ Electron 실행 흐름:
 ## 권장 릴리즈 절차
 1. `scripts\\build.bat vX.Y.Z` 실행
 2. 산출물 확인
-	- `electron/dist/win-unpacked/ShortsGak.exe`
+	- `electron/dist/electron/win-unpacked/ShortsGak.exe`
 	- `release/ShortsGak-win64-vX.Y.Z.zip`
 3. ZIP 압축 해제 후 exe 스모크 테스트
 4. 이상 없으면 릴리즈 업로드

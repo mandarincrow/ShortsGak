@@ -20,6 +20,8 @@ win:
     - target: dir
       arch:
         - x64
+  # signExts: [] → 서명할 확장자 없음 → signtool/winCodeSign 호출 자체를 건너뜀
+  signExts: []
 
 # 'dir' target produces dist/electron/win-unpacked/ — scripts/package_release.bat
 # zips this folder as ShortsGak-win64-<DATE>.zip (zip 배포 방식 유지).

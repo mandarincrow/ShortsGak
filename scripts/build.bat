@@ -1,4 +1,13 @@
 @echo off
+
+:: ── 관리자 권한 확인 & 자동 UAC 재실행 ──────────────────────────────────
+net session >nul 2>&1
+if errorlevel 1 (
+    powershell -NoProfile -Command ^
+      "Start-Process cmd -ArgumentList '/c \"\"%~f0\" %*\"' -Verb RunAs -Wait"
+    exit /b %ERRORLEVEL%
+)
+
 setlocal EnableExtensions EnableDelayedExpansion
 
 set "ROOT=%~dp0.."
@@ -43,6 +52,14 @@ set "BUILD_STEP_OK=0"
 echo ================================================
 echo  Build started  %DATE% %TIME%
 echo ================================================
+
+:: ── Clean ──────────────────────────────────────
+echo  Cleaning previous build artifacts...
+if exist "%ROOT%\dist\backend"    rmdir /s /q "%ROOT%\dist\backend"
+if exist "%ROOT%\build\backend"   rmdir /s /q "%ROOT%\build\backend"
+if exist "%ROOT%\electron\dist"   rmdir /s /q "%ROOT%\electron\dist"
+echo  Clean done.
+echo.
 
 :: ── Step 1 ──────────────────────────────────────
 call :step_start 1 "Frontend  (npm install + build)"
@@ -105,6 +122,9 @@ if errorlevel 1 ( echo [ERROR] npm not found. Install Node.js. & cd "%ROOT%" & e
 call npm install
 if errorlevel 1 ( echo [ERROR] electron npm install failed & cd "%ROOT%" & exit /b 1 )
 
+:: 코드 서명 인증서 없이 빌드 — winCodeSign 다운로드/symlink 권한 오류 방지
+set CSC_IDENTITY_AUTO_DISCOVERY=false
+set WIN_CSC_LINK=
 call npx electron-builder
 if errorlevel 1 ( echo [ERROR] electron-builder failed & cd "%ROOT%" & exit /b 1 )
 
@@ -123,7 +143,7 @@ echo ================================================
 echo  Build summary  %DATE% %TIME%
 echo ================================================
 
-set "EXE=%ROOT%\electron\dist\win-unpacked\ShortsGak.exe"
+set "EXE=%ROOT%\electron\dist\electron\win-unpacked\ShortsGak.exe"
 if exist "%EXE%" (
     for %%F in ("%EXE%") do echo  exe   : %%~fF  [%%~zF bytes]
 ) else (

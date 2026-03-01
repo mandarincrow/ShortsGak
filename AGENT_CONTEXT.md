@@ -83,6 +83,7 @@ ShortsGak-win64-<DATE>/
   - Step 2: `desktop_launcher/requirements.txt` 제거
   - Step 3: `pyinstaller backend.spec`
   - Step 4 (신규): `cd electron && npm install && npx electron-builder`
+  - Step 4: `CSC_IDENTITY_AUTO_DISCOVERY=false` 설정 — winCodeSign symlink 오류 방지 (코드사이닝 비활성화)
   - Step 5: `package_release.bat`
 - `package_release.bat`:
   - DIST_DIR: `electron\dist\win-unpacked`
