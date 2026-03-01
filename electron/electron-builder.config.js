@@ -1,9 +1,8 @@
 /**
  * electron-builder.config.js
  *
- * JS 설정 파일로 YAML 대신 사용 (electron-builder.yml보다 우선 로드됨).
- * win.sign 에 no-op 함수를 직접 지정 → winCodeSign 다운로드/symlink 오류 방지.
- * (코드 서명 인증서 없이 배포하는 개발/배포 빌드용)
+ * electron-builder 설정 파일.
+ * 코드 서명 인증서 없이 배포하는 빌드용 — CSC_IDENTITY_AUTO_DISCOVERY=false 환경변수로 서명 비활성화.
  */
 
 /** @type {import('electron-builder').Configuration} */

@@ -93,12 +93,14 @@ scripts\package_release.bat v0.1.0
 
 ```
 electron/
-  main.js          ← Electron main process
-  utils.js         ← findFreePort(), parseListeningPort() 유틸리티
+  main.js                     ← Electron main process
+  utils.js                    ← findFreePort(), parseListeningPort() 유틸리티
   package.json
-  electron-builder.yml
+  electron-builder.config.js  ← electron-builder 설정 (코드 서명 비활성화 포함)
+  assets/
+    icon.ico                  ← 앱 아이콘
   tests/
-    utils.test.js  ← 순수 Node.js 단위 테스트
+    utils.test.js             ← 순수 Node.js 단위 테스트
 ```
 
 Electron 실행 흐름:

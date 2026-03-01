@@ -24,6 +24,7 @@ backend/.venv/
 
 # Build artifacts (Python / PyInstaller)
 build/
+*.spec.bak
 dist/
 *.spec.bak
 *.zip
