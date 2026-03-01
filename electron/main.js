@@ -87,14 +87,6 @@ async function launchApp() {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
 
-  backendProc.on('error', (err) => {
-    dialog.showErrorBox(
-      'ShortsGak',
-      `서버 시작 실패:\n${err.message}\n\n경로: ${exePath}`
-    )
-    app.quit()
-  })
-
   backendProc.stderr.on('data', (data) => {
     const text = data.toString()
     if (text.startsWith('ERROR:')) {
@@ -102,14 +94,24 @@ async function launchApp() {
     }
   })
 
-  // Wait for LISTENING_PORT=N on stdout, then poll /health
+  // Wait for LISTENING_PORT=N on stdout, then poll /health.
+  // 'error' (ENOENT / EACCES) and 'exit' are both funnelled into the same
+  // rejection path so we never show two dialogs or call app.quit() twice.
   const rl = readline.createInterface({ input: backendProc.stdout })
   let portConfirmed = false
 
   const portPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
+      rl.close()
       reject(new Error('Timed out waiting for LISTENING_PORT signal'))
     }, HEALTH_POLL_TIMEOUT_MS)
+
+    function fail(err) {
+      if (portConfirmed) return
+      clearTimeout(timeout)
+      rl.close()
+      reject(err)
+    }
 
     rl.on('line', (line) => {
       if (portConfirmed) return
@@ -117,14 +119,18 @@ async function launchApp() {
       if (parsed !== null) {
         portConfirmed = true
         clearTimeout(timeout)
+        rl.close()
         resolve(parsed)
       }
     })
 
+    backendProc.on('error', (err) => {
+      fail(new Error(`backend.exe 실행 실패: ${err.message}\n경로: ${exePath}`))
+    })
+
     backendProc.on('exit', (code) => {
       if (!portConfirmed) {
-        clearTimeout(timeout)
-        reject(new Error(`backend.exe 종료 (code ${code}) before LISTENING_PORT`))
+        fail(new Error(`backend.exe 조기 종료 (exit code ${code})`))
       }
     })
   })
